@@ -12,7 +12,10 @@ Levels are reported separately and only from what was measured:
     level1_inference:  every predicted chunk had the right shape and finite values
     level2_control:    the predicted actions were mapped and executed with no source error,
                        no backend rejection, and no arm-table collision
-    level3_success:    the cube was detected in the box (LeRobot env definition) at the end
+    level3_success:    the cube is in the box (LeRobot env definition) AND released (no gripper
+                       contact) for ``success_hold_s``. LeRobot's test alone (center inside the box
+                       footprint, below 6 cm) also passes for a cube still held just above the rim,
+                       so it is recorded separately as ``in_box_lerobot_ever``.
 """
 
 from __future__ import annotations
@@ -67,7 +70,7 @@ def run_episode(robot: MuJoCoRobot, ctrl: ArmController, task: PickPlaceTask, so
     ticks = int(round(ep.max_seconds / ctrl.dt))
     t_wall = time.perf_counter()
     states, table_hits, in_box_since, stop = [], 0, None, "timeout"
-    min_dist, touched, grasped, lifted = np.inf, False, False, False
+    min_dist, touched, grasped, lifted, in_box_ever = np.inf, False, False, False, False
     for _ in range(ticks):
         sel.tick()
         s = task.state()
@@ -76,7 +79,9 @@ def run_episode(robot: MuJoCoRobot, ctrl: ArmController, task: PickPlaceTask, so
         table_hits += hits > 0
         min_dist = min(min_dist, s.gripper_to_cube)
         touched, grasped, lifted = touched or s.touching, grasped or s.grasped, lifted or s.lifted
-        in_box_since = (in_box_since if in_box_since is not None else s.time) if s.in_box else None
+        in_box_ever = in_box_ever or s.in_box
+        placed = s.in_box and not s.touching  # in the box and let go
+        in_box_since = (in_box_since if in_box_since is not None else s.time) if placed else None
         if in_box_since is not None and s.time - in_box_since >= ep.success_hold_s:
             stop = "success"
             break
@@ -105,6 +110,7 @@ def run_episode(robot: MuJoCoRobot, ctrl: ArmController, task: PickPlaceTask, so
         "ticks_arm_touching_table": int(table_hits),
         "progress": {"min_gripper_to_cube_m": round(float(min_dist), 4), "touched_cube": touched,
                      "grasped_cube": grasped, "lifted_cube": lifted, "cube_in_box_at_end": final.in_box,
+                     "in_box_lerobot_ever": in_box_ever, "released_at_end": not final.touching,
                      "cube_moved_m": round(float(np.linalg.norm(final.cube_pos[:2] - np.array(task.layout["cube_xy"]))), 4)},
     }
     if out_dir is not None:
