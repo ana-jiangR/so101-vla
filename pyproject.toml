@@ -11,9 +11,23 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Stage 2 (pretrained VLA) dependencies are added here later, so Stage 1
-# installs without torch / CUDA.
-vla = []
+# Stage 2 (pretrained VLA). Optional, so Stage 1 installs without torch / CUDA:
+#   uv sync --extra vla
+vla = [
+    "lerobot[smolvla]==0.6.1",
+    "torch>=2.7,<2.12",       # lerobot 0.6.1's range
+    "torchvision",
+]
+
+[tool.uv.sources]
+# CUDA builds of PyTorch on Windows/Linux (the default PyPI wheel on Windows is CPU-only).
+torch = [{ index = "pytorch-cu128", marker = "sys_platform != 'darwin'" }]
+torchvision = [{ index = "pytorch-cu128", marker = "sys_platform != 'darwin'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 [dependency-groups]
 dev = [
