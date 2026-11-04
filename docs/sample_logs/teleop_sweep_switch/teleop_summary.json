@@ -1,0 +1,67 @@
+{
+  "ticks": 600,
+  "duration_s": 20.0,
+  "engaged_ticks": 494,
+  "events": [
+    {
+      "mode": "sweep_switch"
+    },
+    {
+      "t": 0.0,
+      "select": "leader"
+    },
+    {
+      "t": 0.0,
+      "engaged": "leader"
+    },
+    {
+      "t": 6.6667,
+      "select": "policy"
+    },
+    {
+      "t": 7.7333,
+      "engaged": "policy"
+    },
+    {
+      "t": 13.3333,
+      "select": "leader"
+    },
+    {
+      "t": 15.8,
+      "engaged": "leader"
+    }
+  ],
+  "leader_to_follower_error_rad": {
+    "max_abs": {
+      "shoulder_pan": 0.0386,
+      "shoulder_lift": 0.0022,
+      "elbow_flex": 0.0046,
+      "wrist_flex": 0.0054,
+      "wrist_roll": 0.063,
+      "gripper": 0.0113
+    },
+    "rms": {
+      "shoulder_pan": 0.0042,
+      "shoulder_lift": 0.0004,
+      "elbow_flex": 0.0007,
+      "wrist_flex": 0.0009,
+      "wrist_roll": 0.0068,
+      "gripper": 0.0049
+    }
+  },
+  "follower_lag_ms": {
+    "shoulder_pan": 33.3,
+    "shoulder_lift": 33.3,
+    "elbow_flex": 33.3,
+    "wrist_flex": 33.3,
+    "wrist_roll": 33.3,
+    "gripper": 33.3
+  },
+  "follower_lag_note": "delay from leader sample to matching follower position, including one control period of zero-order hold",
+  "compute_latency_ms": {
+    "mean": 0.418,
+    "p95": 0.466,
+    "max": 0.958,
+    "budget": 33.333
+  }
+}
