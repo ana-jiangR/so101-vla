@@ -9,7 +9,7 @@ robot with a head camera. See [design.md](design.md) for the full brief.
 |-------|--------|
 | 1. Low-level control + teleoperation in MuJoCo | **done** (sim) |
 | 2. Pretrained SmolVLA in simulation | **done**: pipeline runs closed loop; zero-shot results in [docs/stage2.md](docs/stage2.md) |
-| 3. Demonstrations + fine-tuning | next: simulation first (plan below), real hardware later |
+| 3. Demonstrations + fine-tuning | in progress (simulation): fine-tuned SmolVLA places the cube in 4/20 unseen layouts; see [docs/stage3.md](docs/stage3.md) |
 
 Where an official source exists, we follow it. The robot model, its commit, the
 units, the 30 Hz rate, and the home pose all match LeRobot's official
@@ -53,7 +53,7 @@ piece comes from is listed in [docs/stage2.md](docs/stage2.md).
    chunk execution through the same `CommandSelector` → `SafetyFilter` path; zero-shot
    evaluation at three levels (inference / control / task success). Dependencies are in
    the `vla` extra.
-3. **Stage 3: demonstrations and fine-tuning (next, simulation first).** Zero-shot
+3. **Stage 3: demonstrations and fine-tuning (in progress, simulation first).** Zero-shot
    `smolvla_base` does not solve the task, and the official docs say it must be
    fine-tuned on the target robot and task. Plan:
    1. record demonstrations in this MuJoCo scene, using a scripted expert policy
@@ -71,7 +71,22 @@ piece comes from is listed in [docs/stage2.md](docs/stage2.md).
 Bimanual "duck" robot: every API is keyed by arm name, and the two-arm config builds
 and is tested. Observations use LeRobot's `left_`/`right_` keys.
 
-## Quick start (Windows)
+## Setup
+
+| Platform | Use it for | Guide |
+|---|---|---|
+| **Windows 11** (tested) | everything: simulation, teleop, SmolVLA inference, recording, short fine-tuning runs | [docs/setup-windows.md](docs/setup-windows.md) |
+| **Linux** (GPU workstation or WSL2) | long fine-tuning runs (Stage 3); no Windows workarounds, video datasets, large GPUs | [docs/setup-linux.md](docs/setup-linux.md) |
+
+Install only what each stage needs (all versions pinned in `uv.lock`):
+
+| Command | Installs | GPU |
+|---|---|---|
+| `uv sync` | Stage 1: MuJoCo, numpy, PyYAML | no |
+| `uv sync --extra vla` | + Stage 2: PyTorch 2.11 (CUDA 12.8), `lerobot[smolvla]` 0.6.1 | for inference (~0.9 GiB) |
+| `uv sync --extra train` | + Stage 3: `lerobot[training]` (datasets, PyAV, torchcodec), `mink` | for fine-tuning (~3.6 GB at batch 8) |
+
+### Quick start (Windows PowerShell)
 
 ```powershell
 uv sync
@@ -84,9 +99,28 @@ uv sync --extra vla                              # Stage 2: torch (CUDA) + LeRob
 uv run python scripts/m5_offline_inference.py    # SmolVLA prediction only, robot doesn't move
 uv run python scripts/m6_vla_closed_loop.py      # SmolVLA drives the arm (viewer)
 uv run python scripts/m7_zero_shot_eval.py       # zero-shot evaluation, headless (~10 min)
+
+uv sync --extra train                            # Stage 3: dataset + training tools
+uv run python scripts/m8_record_demos.py --episodes 10   # scripted expert -> LeRobotDataset
+uv run python scripts/m9_finetune.py --episodes 10 --steps 2000
 ```
 
-See [docs/setup-windows.md](docs/setup-windows.md) for details.
+### Quick start (Linux)
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+sudo apt-get install -y git ffmpeg                # FFmpeg: video datasets
+git clone https://github.com/ana-jiangR/sol101-vla.git so101-vla && cd so101-vla
+uv sync --extra train
+export MUJOCO_GL=egl                              # only on a server without a display
+uv run pytest -q
+uv run python scripts/m8_record_demos.py --episodes 50 --videos
+uv run python scripts/m9_finetune.py --episodes 50 --steps 20000 --batch-size 64 --save-freq 5000
+```
+
+The Linux steps follow the official uv, PyTorch, LeRobot and MuJoCo instructions but have not
+been run in this repo yet; see [docs/setup-linux.md](docs/setup-linux.md) for details, copying
+datasets/checkpoints between machines, and WSL2.
 
 ## Layout
 
@@ -100,15 +134,17 @@ src/so101_vla/
   conventions.py           joint order, units, LeRobot <-> radians conversion (one place)
   config.py                YAML -> dataclasses
   robot/                   RobotInterface (backend contract) + MuJoCoRobot
-  control/                 SafetyFilter, trajectories, ArmController (numpy only)
+  control/                 SafetyFilter, trajectories, ArmController (numpy only), mink IK (Stage 3)
   teleop/                  virtual leaders, CommandSelector (one active source)
   sim/                     scene composition, cameras, real-time viewer, tabletop task metrics
-  policies/                SmolVLA via LeRobot, action-chunk validator, policy as command source
+  policies/                SmolVLA via LeRobot, action-chunk validator, policy as command source,
+                           scripted pick-and-place expert
+  recording.py             demonstrations -> LeRobotDataset (lerobot-record's schema and order)
   evaluation/              closed-loop episodes, three-level results
   utils/                   PNG output
-scripts/                   m1_* … m7_* milestone demos, asset fetchers
+scripts/                   m1_* … m9_* milestone demos, asset fetchers
 tests/                     headless pytest suite
-docs/                      conventions, setup, Stage 2 report (stage2.md), sample_logs/
+docs/                      conventions, setup (Windows, Linux), Stage 2/3 reports, sample_logs/
 ```
 
 ## Architecture
@@ -213,6 +249,24 @@ sel.log.save("outputs/my_teleop", ctrl.dt)
 - **Level 3, task success: 0/18.** The cube was touched in 5 episodes but never grasped.
 - The checkpoint's saved normalization stats don't apply in LeRobot 0.6.1, and they describe SO-100
   (old calibration) data. The official docs present `smolvla_base` as a base model for fine-tuning.
+
+## Stage 3 results so far (simulation, fine-tuned on scripted demonstrations)
+
+Scripted IK expert: 50/52 layouts recorded (every kept episode places the cube in the box).
+Fine-tuned with `lerobot-train` on the laptop GPU (RTX 4060, 8 GB) and evaluated on unseen
+layouts ([docs/stage3.md](docs/stage3.md)):
+
+| | zero-shot | 10 ep × 2k steps | 50 ep × 5k steps | **50 ep × 20k steps, batch 16** |
+|---|---|---|---|---|
+| training time | – | 34 min | 74 min | 317 min (overnight) |
+| L2 control (no table contact) | 0/9 | 7/10 | 9/10 | 19/20 |
+| grasped / lifted | 0 / 0 | 1 / 0 | 2 / 1 | 4 / 4 |
+| **L3: cube placed in the box and released** | **0/9** | **0/10** | **0/10** | **4/20** |
+
+The 4 placements (seeds 2, 10, 13, 19) were checked from the logged cube position (resting on
+the box floor, released). The policy is stochastic: a second run of the same checkpoint
+grasped 8/20 and placed at least 1. Failures are missed grasps; once grasped, the cube was
+always carried and placed.
 
 Sample outputs from these runs are in [docs/sample_logs/](docs/sample_logs/).
 
