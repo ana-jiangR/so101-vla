@@ -19,6 +19,16 @@ vla = [
     "torchvision",
 ]
 
+# Stage 3 (demonstrations + fine-tuning):  uv sync --extra train
+# lerobot[training] brings LeRobotDataset (datasets, pyarrow, PyAV, torchcodec) and
+# lerobot-train's dependencies. mink = differential IK for the scripted expert
+# (LeRobot's own RobotKinematics needs placo, which has no Windows wheels).
+train = [
+    "so101-vla[vla]",
+    "lerobot[smolvla,training]==0.6.1",
+    "mink>=1.4,<2",
+]
+
 [tool.uv.sources]
 # CUDA builds of PyTorch on Windows/Linux (the default PyPI wheel on Windows is CPU-only).
 torch = [{ index = "pytorch-cu128", marker = "sys_platform != 'darwin'" }]
