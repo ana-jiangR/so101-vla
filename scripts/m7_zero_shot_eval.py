@@ -33,17 +33,26 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--robot-config", default="configs/robot/so101_tabletop.yaml")
     ap.add_argument("--policy-config", default="configs/policy/smolvla_base.yaml")
-    ap.add_argument("--stats-modes", nargs="+", default=["as_shipped", "checkpoint_action_stats"])
+    ap.add_argument("--stats-modes", nargs="+", default=None,
+                    help="default: both for smolvla_base, as_shipped for a fine-tuned checkpoint")
+    ap.add_argument("--checkpoint", default=None, help="Hub id or local fine-tuned checkpoint (pretrained_model dir)")
+    ap.add_argument("--rtc", action="store_true", help="LeRobot Real-Time Chunking (smooth chunk transitions)")
+    ap.add_argument("--tag", default=None, help="name for the results folder")
     ap.add_argument("--instructions", nargs="+", default=INSTRUCTIONS)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--seconds", type=float, default=30.0)
+    ap.add_argument("--replan-every", type=int, default=None,
+                    help="predict a new chunk after this many actions (default: whole 50-action chunks)")
     args = ap.parse_args()
 
     cfg = load_robot_config(args.robot_config)
-    out = PROJECT_ROOT / "outputs" / f"zero_shot_eval_{time.strftime('%Y%m%d_%H%M%S')}"
+    finetuned = args.checkpoint is not None
+    modes = args.stats_modes or (["as_shipped"] if finetuned else ["as_shipped", "checkpoint_action_stats"])
+    tag = args.tag or ("finetuned" if finetuned else "zero_shot")
+    out = PROJECT_ROOT / "outputs" / f"{tag}_eval_{time.strftime('%Y%m%d_%H%M%S')}"
     results = []
-    for mode in args.stats_modes:
-        pcfg = load_smolvla_config(args.policy_config, stats_mode=mode)
+    for mode in modes:
+        pcfg = load_smolvla_config(args.policy_config, checkpoint=args.checkpoint, rtc=args.rtc or None, stats_mode=mode)
         policy = SmolVLAPolicy(pcfg)
         for instruction in args.instructions:
             for seed in args.seeds:
@@ -51,10 +60,11 @@ def main() -> None:
                 ctrl = ArmController.from_config(robot, cfg)
                 task = PickPlaceTask(robot)
                 ep_dir = out / mode / f"{instruction[:-1].lower().replace(' ', '_')}_seed{seed}"
-                res = run_episode(robot, ctrl, task, PolicySource.for_robot(robot, policy, instruction),
+                res = run_episode(robot, ctrl, task, PolicySource.for_robot(robot, policy, instruction, replan_every=args.replan_every),
                                   EpisodeConfig(instruction, seed, args.seconds), ep_dir)
                 robot.close()
                 res["stats_mode"] = mode
+                res["checkpoint"] = pcfg.checkpoint
                 results.append(res)
                 p = res["progress"]
                 print(f"[{mode}] {instruction!r} seed {seed}: L1={res['level1_inference']} "
@@ -82,7 +92,8 @@ def main() -> None:
             "inference_ms_mean": round(float(np.mean([r["inference_ms_mean"] for r in rs if r["inference_ms_mean"]])), 0),
         })
     out.mkdir(parents=True, exist_ok=True)
-    (out / "results.json").write_text(json.dumps({"config": vars(args), "summary": summary, "episodes": results},
+    (out / "results.json").write_text(json.dumps({"config": vars(args), "checkpoint": args.checkpoint or "lerobot/smolvla_base",
+                                                 "summary": summary, "episodes": results},
                                                  indent=2, default=str), encoding="utf-8")
     lines = ["| stats mode | instruction | L1 inference | L2 control | L3 success | touched | grasped | "
              "min dist (cm) | clipped ticks | table-contact ticks |", "|" + "---|" * 10]

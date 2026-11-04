@@ -12,6 +12,12 @@ Every step follows an official source; nothing here re-implements the model:
   pretraining views as image 1 = top, 2 = wrist, 3 = side
 * stats override: ``NormalizerProcessorStep`` (lerobot/processor/normalize_processor.py)
   keeps ``stats`` passed as a constructor override instead of the saved file
+* Real-Time Chunking (optional, ``rtc=True``): huggingface.co/docs/lerobot/rtc and
+  ``lerobot/rollout/inference/rtc.py``: set ``policy.config.rtc_config`` and call
+  ``init_rtc_processor()``; re-plan when ``rtc_replan_threshold`` actions are left; pass the
+  unexecuted tail of the previous chunk in model (normalized) space, padded/truncated to
+  ``execution_horizon`` (``_normalize_prev_actions_length``), as ``prev_chunk_left_over``.
+  Our loop is synchronous (sim time pauses during inference), so ``inference_delay`` = 0.
 
 Verified finding (see docs/stage2.md): the checkpoint saves only *action* stats, under
 the legacy keys ``so100*.buffer.action.{mean,std}``. LeRobot 0.6.1 loads them under
@@ -54,6 +60,12 @@ class SmolVLAConfig:
     stats_mode: str = "as_shipped"
     stats_buffer: str = "so100.buffer.action"
     n_action_steps: int | None = None  # None = checkpoint's (50)
+    # Real-Time Chunking (LeRobot RTC): smooth transitions between chunks.
+    rtc: bool = False
+    rtc_execution_horizon: int = 10  # docs: 8-12
+    rtc_max_guidance_weight: float = 10.0  # docs: 10 for 10 flow-matching steps
+    rtc_schedule: str = "EXP"  # docs: "EXP (recommended for getting started)"
+    rtc_replan_threshold: int = 30  # LeRobot rollout default: re-plan when <= 30 actions are left
 
     def __post_init__(self) -> None:
         if self.stats_mode not in STATS_MODES:
@@ -62,6 +74,8 @@ class SmolVLAConfig:
 
 def load_smolvla_config(path, **overrides) -> SmolVLAConfig:
     """YAML (configs/policy/*.yaml) -> SmolVLAConfig; keyword overrides win."""
+    import pathlib
+
     import yaml
 
     from so101_vla.config import resolve_path
@@ -69,6 +83,8 @@ def load_smolvla_config(path, **overrides) -> SmolVLAConfig:
     with open(resolve_path(path), encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
     raw.update({k: v for k, v in overrides.items() if v is not None})
+    if overrides.get("checkpoint") and pathlib.Path(overrides["checkpoint"]).exists():
+        raw["revision"] = None  # a local fine-tuned checkpoint has no Hub revision
     if "image_size" in raw:
         raw["image_size"] = tuple(raw["image_size"])
     return SmolVLAConfig(**raw)
@@ -116,6 +132,16 @@ class SmolVLAPolicy:
         self.pre, self.post = make_pre_post_processors(
             self.policy.config, cfg.checkpoint, pretrained_revision=cfg.revision,
             preprocessor_overrides=pre_over, postprocessor_overrides=post_over)
+        if cfg.rtc:
+            from lerobot.configs import RTCAttentionSchedule
+            from lerobot.policies.rtc import RTCConfig
+
+            self.policy.config.rtc_config = RTCConfig(
+                enabled=True, execution_horizon=cfg.rtc_execution_horizon,
+                max_guidance_weight=cfg.rtc_max_guidance_weight,
+                prefix_attention_schedule=RTCAttentionSchedule[cfg.rtc_schedule])
+            self.policy.init_rtc_processor()
+        self._last_original = None  # previous chunk in model (normalized) space, for RTC
         self.load_seconds = time.perf_counter() - t0
         self.last_inference_ms: float | None = None
 
@@ -144,7 +170,9 @@ class SmolVLAPolicy:
             "num_flow_steps": pc.num_steps, "vlm": pc.vlm_model_name, "device": self.config.device,
             "camera_map": self.config.camera_map, "image_size": list(self.config.image_size),
             "stats_mode": self.config.stats_mode, "normalizer_stats_keys_loaded": loaded,
-            "stats_applied_to": sorted(self.stats_used) or "none (keys do not match 'action'/'observation.state')",
+            "stats_applied_to": sorted(self.stats_used) or sorted(
+                {"action", STATE_KEY} & set(loaded.get("preprocessor.NormalizerProcessorStep", [])))
+            or "none (keys do not match 'action'/'observation.state')",
             "load_seconds": round(self.load_seconds, 1),
         }
 
@@ -155,15 +183,29 @@ class SmolVLAPolicy:
 
     # --- inference -------------------------------------------------------------------
 
+    @property
+    def uses_rtc(self) -> bool:
+        return self.config.rtc
+
+    @property
+    def rtc_replan_every(self) -> int | None:
+        """Actions to execute per chunk before re-planning (None without RTC)."""
+        if not self.config.rtc:
+            return None
+        return max(1, self.policy.config.n_action_steps - self.config.rtc_replan_threshold)
+
     def reset(self) -> None:
         self.policy.reset()
+        self._last_original = None
 
-    def predict_chunk(self, observation: dict, instruction: str) -> np.ndarray:
+    def predict_chunk(self, observation: dict, instruction: str,
+                      executed_from_previous: int | None = None) -> np.ndarray:
         """One action chunk (n_action_steps, 6) in LeRobot units, joint order ``LEROBOT_FEATURE_NAMES``.
 
         ``observation`` is ``RobotInterface.get_observation(cameras=self.camera_names, ...)``:
         ``"<joint>.pos"`` floats plus ``{camera: (H, W, 3) uint8}``. Raw model output after
         LeRobot's postprocessor; it is NOT validated here (that is the action adapter's job).
+        With RTC, ``executed_from_previous`` = how many actions of the previous chunk ran.
         """
         from lerobot.envs.utils import preprocess_observation
 
@@ -177,8 +219,22 @@ class SmolVLAPolicy:
         if self.config.device.startswith("cuda"):
             torch.cuda.synchronize()
         t0 = time.perf_counter()
-        with torch.inference_mode():
-            chunk = self.policy.predict_action_chunk(batch)
+        kwargs = {}
+        if self.config.rtc:
+            from lerobot.rollout.inference.rtc import _normalize_prev_actions_length
+
+            prev = None
+            if self._last_original is not None and executed_from_previous is not None:
+                left = self._last_original[executed_from_previous:]
+                if len(left):
+                    prev = _normalize_prev_actions_length(left, target_steps=self.config.rtc_execution_horizon)
+            kwargs = {"inference_delay": 0, "prev_chunk_left_over": prev}
+        # RTC's guidance uses torch.enable_grad() internally (lerobot/policies/rtc/modeling_rtc.py),
+        # which inference_mode would block; no_grad is what LeRobot's own RTC loop relies on.
+        grad_ctx = torch.no_grad() if self.config.rtc else torch.inference_mode()
+        with grad_ctx:
+            chunk = self.policy.predict_action_chunk(batch, **kwargs)
+            self._last_original = chunk.squeeze(0).clone()
             chunk = self.post(chunk)
         if self.config.device.startswith("cuda"):
             torch.cuda.synchronize()

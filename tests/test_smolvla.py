@@ -51,3 +51,14 @@ def test_checkpoint_contract_and_one_chunk(scene, mode):
     lim = scene.joint_limits("main")
     report = ActionChunkValidator(LeRobotUnits(lim.lower, lim.upper)).validate(chunk, scene.get_state().arms["main"].positions)
     assert report.steps == 50 and report.finite  # Level 1: valid action tensors
+
+
+def test_rtc_guided_second_chunk(scene):
+    """LeRobot RTC: the second chunk is guided by the unexecuted tail of the first (no grad errors)."""
+    policy = SmolVLAPolicy(SmolVLAConfig(rtc=True))
+    assert policy.uses_rtc and policy.rtc_replan_every == 20
+    obs = scene.get_observation(cameras=policy.camera_names, width=256, height=256)
+    first = policy.predict_chunk(obs, "Pick up the cube.")
+    second = policy.predict_chunk(obs, "Pick up the cube.", executed_from_previous=20)
+    assert first.shape == second.shape == (50, 6)
+    assert np.all(np.isfinite(second))

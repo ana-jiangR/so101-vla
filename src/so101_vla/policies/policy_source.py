@@ -63,6 +63,7 @@ class PolicySource:
                   image_size: tuple[int, int] | None = None) -> PolicySource:
         """Standard wiring for one arm of a ``RobotInterface``: observation, clock, state, validator."""
         w, h = image_size or getattr(getattr(policy, "config", None), "image_size", (256, 256))
+        replan_every = replan_every or getattr(policy, "rtc_replan_every", None)
         lim = robot.joint_limits(arm)
         return cls(policy, observe=lambda: robot.get_observation(cameras=policy.camera_names, width=w, height=h),
                    clock=lambda: robot.get_state().time, current_q=lambda: robot.get_state().arms[arm].positions,
@@ -79,7 +80,11 @@ class PolicySource:
     def _replan(self) -> None:
         t = self.clock()
         obs = self.observe()
-        chunk = np.asarray(self.policy.predict_chunk(obs, self.instruction), dtype=np.float64)
+        if getattr(self.policy, "uses_rtc", False):  # RTC: tell the policy how much of the last chunk ran
+            raw = self.policy.predict_chunk(obs, self.instruction, executed_from_previous=self._played)
+        else:
+            raw = self.policy.predict_chunk(obs, self.instruction)
+        chunk = np.asarray(raw, dtype=np.float64)
         report = self.validator.validate(chunk, self.current_q())  # raises InvalidChunk -> selector holds
         frames = {c: obs[c] for c in self.policy.camera_names} if self.keep_frames else {}
         self.chunks.append(ChunkRecord(t, self.instruction, chunk, report, self.policy.last_inference_ms, frames))

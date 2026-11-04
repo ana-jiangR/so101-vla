@@ -30,6 +30,8 @@ def main() -> None:
     ap.add_argument("--robot-config", default="configs/robot/so101_tabletop.yaml")
     ap.add_argument("--policy-config", default="configs/policy/smolvla_base.yaml")
     ap.add_argument("--stats-mode", choices=["as_shipped", "checkpoint_action_stats"], default=None)
+    ap.add_argument("--checkpoint", default=None, help="Hub id or local fine-tuned checkpoint (pretrained_model dir)")
+    ap.add_argument("--rtc", action="store_true", help="LeRobot Real-Time Chunking (smooth chunk transitions)")
     ap.add_argument("--instruction", default="Pick up the red cube and place it in the green box.")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--seconds", type=float, default=30.0, help="episode timeout (sim time)")
@@ -38,7 +40,7 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = load_robot_config(args.robot_config)
-    pcfg = load_smolvla_config(args.policy_config, stats_mode=args.stats_mode)
+    pcfg = load_smolvla_config(args.policy_config, checkpoint=args.checkpoint, rtc=args.rtc or None, stats_mode=args.stats_mode)
     print(f"loading {pcfg.checkpoint} ({pcfg.stats_mode}) ...")
     policy = SmolVLAPolicy(pcfg)
     robot = MuJoCoRobot.from_config(cfg)

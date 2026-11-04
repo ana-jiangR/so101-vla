@@ -35,6 +35,7 @@ def main() -> None:
     ap.add_argument("--robot-config", default="configs/robot/so101_tabletop.yaml")
     ap.add_argument("--policy-config", default="configs/policy/smolvla_base.yaml")
     ap.add_argument("--stats-mode", choices=["as_shipped", "checkpoint_action_stats"], default=None)
+    ap.add_argument("--checkpoint", default=None, help="Hub id or local fine-tuned checkpoint (pretrained_model dir)")
     ap.add_argument("--device", default=None)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--instruction", default="Pick up the red cube and place it in the green box.")
@@ -48,7 +49,7 @@ def main() -> None:
     task.reset(np.asarray(cfg.poses["home"]), seed=args.seed)
     ctrl.sync()
 
-    pcfg = load_smolvla_config(args.policy_config, stats_mode=args.stats_mode, device=args.device)
+    pcfg = load_smolvla_config(args.policy_config, checkpoint=args.checkpoint, stats_mode=args.stats_mode, device=args.device)
     print(f"loading {pcfg.checkpoint} ({pcfg.stats_mode}) on {pcfg.device} ...")
     policy = SmolVLAPolicy(pcfg)
     info = policy.describe()
