@@ -1,0 +1,21 @@
+# Pretrained SmolVLA, zero-shot (no fine-tuning). Loaded with LeRobot's own APIs
+# (see src/so101_vla/policies/smolvla.py for the official source of each step).
+checkpoint: lerobot/smolvla_base
+revision: 5e8d12a6e2975b0e5e5fce7c8caf47c371d257b6   # pinned (Hub, 2026-10-06)
+device: cuda
+
+# Policy camera slot -> MuJoCo camera. SmolVLA paper (arXiv 2506.01844, Sec. 3.2):
+# pretraining views were standardized as image 1 = top, 2 = wrist, 3 = side.
+camera_map:
+  camera1: top
+  camera2: main/wrist_cam
+  camera3: front
+image_size: [256, 256]   # the checkpoint's input_features (C, 256, 256)
+
+# The checkpoint stores only action stats, under legacy keys LeRobot 0.6.1 does not
+# apply (docs/stage2.md). "as_shipped" = LeRobot's pipeline unchanged;
+# "checkpoint_action_stats" = apply the saved so100 action stats explicitly.
+stats_mode: as_shipped
+stats_buffer: so100.buffer.action
+
+n_action_steps: null      # null = checkpoint's 50 (play the whole chunk, then re-observe)
