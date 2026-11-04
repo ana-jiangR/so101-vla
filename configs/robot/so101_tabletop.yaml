@@ -1,0 +1,39 @@
+# One SO-101 on LeRobot's official tabletop (Stage 2). The scene is our one-cube
+# variant of lerobot/so101-tabletop-mujoco (assets/lerobot_tabletop/PROVENANCE.md).
+# The table surface is at z = 0 and the arm base sits on it at the origin, as in
+# LeRobot's env (its so101_mount site).
+
+scene: assets/lerobot_tabletop/so101_pick_place.xml
+physics_timestep: null
+control_hz: 30
+
+arms:
+  - name: main
+    model: assets/robotstudio_so101/so101.xml
+    mount: {pos: [0, 0, 0], quat: [1, 0, 0, 0]}
+    color: [0.30, 0.62, 0.68]   # LeRobot kit turquoise, as LeRobot's tabletop env
+
+# Extra cameras (the scene already has "front" and "top", the arm has "main/wrist_cam").
+# "head" approximates the future duck robot's egocentric camera: the arms will be
+# mounted on the sides of the body with the head between and above them, so for
+# this one (right) arm the head sits behind and to its left, looking down at the table.
+cameras:
+  head:
+    pos: [-0.10, 0.16, 0.45]
+    target: [0.24, 0.02, 0.0]
+    fovy: 60
+    width: 640
+    height: 480
+
+safety:
+  position_margin: [0.02, 0.02, 0.02, 0.02, 0.02, 0.0]
+  max_velocity: 1.5
+  max_acceleration: 6.0
+  max_relative_target: null
+  on_out_of_range: clip
+  tracking_error_warn: 0.15
+
+poses:
+  zero: [0, 0, 0, 0, 0, 0]
+  home: [0, -1.047198, 1.047198, 0.610865, 0, 0.401426]   # LeRobot env HOME
+  rest: [0, -1.6, 1.55, 0.75, 0, 0]

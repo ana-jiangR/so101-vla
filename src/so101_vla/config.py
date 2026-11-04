@@ -37,6 +37,9 @@ class ArmConfig:
     model: Path
     mount_pos: tuple[float, float, float] = (0.0, 0.0, 0.0)
     mount_quat: tuple[float, float, float, float] = (1.0, 0.0, 0.0, 0.0)  # w x y z
+    # RGB for the 3D-printed parts (None = Menagerie's yellow). LeRobot's tabletop env
+    # uses the turquoise of the LeRobot kits, (0.30, 0.62, 0.68); motors stay dark.
+    color: tuple[float, float, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -61,6 +64,22 @@ class SafetyConfig:
 
 
 @dataclass(frozen=True)
+class CameraConfig:
+    """A fixed RGB camera added to the scene at build time (Stage 2, Task 2.1).
+
+    Placed at ``pos`` looking at ``target`` (world frame, z up). ``width``/``height``
+    are the default render size used for observations.
+    """
+
+    name: str
+    pos: tuple[float, float, float]
+    target: tuple[float, float, float]
+    fovy: float = 60.0  # vertical field of view [deg]
+    width: int = 640
+    height: int = 480
+
+
+@dataclass(frozen=True)
 class RobotConfig:
     scene: Path
     arms: tuple[ArmConfig, ...]
@@ -71,6 +90,8 @@ class RobotConfig:
     safety: SafetyConfig = field(default_factory=SafetyConfig)
     # Named joint-space poses [rad], applied per arm.
     poses: dict[str, tuple[float, ...]] = field(default_factory=dict)
+    # Extra cameras added to the scene (the scene's own cameras stay available too).
+    cameras: tuple[CameraConfig, ...] = ()
 
     @property
     def arm_names(self) -> tuple[str, ...]:
@@ -87,6 +108,7 @@ def _parse_robot_config(raw: dict[str, Any]) -> RobotConfig:
                 model=resolve_path(a["model"]),
                 mount_pos=tuple(mount.get("pos", (0.0, 0.0, 0.0))),
                 mount_quat=tuple(mount.get("quat", (1.0, 0.0, 0.0, 0.0))),
+                color=None if a.get("color") is None else tuple(float(x) for x in a["color"]),
             )
         )
     names = [a.name for a in arms]
@@ -105,6 +127,11 @@ def _parse_robot_config(raw: dict[str, Any]) -> RobotConfig:
         tracking_error_warn=float(s.get("tracking_error_warn", defaults.tracking_error_warn)),
     )
     poses = {k: _vector(v, f"poses.{k}") for k, v in raw.get("poses", {}).items()}
+    cameras = tuple(
+        CameraConfig(name=name, pos=tuple(float(x) for x in c["pos"]), target=tuple(float(x) for x in c["target"]),
+                     fovy=float(c.get("fovy", 60.0)), width=int(c.get("width", 640)), height=int(c.get("height", 480)))
+        for name, c in (raw.get("cameras") or {}).items()
+    )
 
     return RobotConfig(
         scene=resolve_path(raw["scene"]),
@@ -113,6 +140,7 @@ def _parse_robot_config(raw: dict[str, Any]) -> RobotConfig:
         control_hz=float(raw.get("control_hz", 30.0)),
         safety=safety,
         poses=poses,
+        cameras=cameras,
     )
 
 
