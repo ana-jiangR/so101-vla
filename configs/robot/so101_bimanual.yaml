@@ -1,0 +1,27 @@
+# Two independently actuated SO-101 follower arms (future duck robot layout).
+# Used to check that the code has no single-arm assumptions; not a tuned layout.
+
+scene: assets/scenes/arm_only.xml
+physics_timestep: null
+control_hz: 30
+
+arms:
+  - name: left
+    model: assets/robotstudio_so101/so101.xml
+    mount: {pos: [0, 0.2, 0], quat: [1, 0, 0, 0]}
+  - name: right
+    model: assets/robotstudio_so101/so101.xml
+    mount: {pos: [0, -0.2, 0], quat: [1, 0, 0, 0]}
+
+safety:
+  position_margin: [0.02, 0.02, 0.02, 0.02, 0.02, 0.0]
+  max_velocity: 1.5
+  max_acceleration: 6.0
+  max_relative_target: null       # max rad between target and measured position (LeRobot follower option); null = off
+  on_out_of_range: clip
+  tracking_error_warn: 0.15
+
+poses:
+  zero: [0, 0, 0, 0, 0, 0]
+  home: [0, -1.047198, 1.047198, 0.610865, 0, 0.401426]
+  rest: [0, -1.6, 1.55, 0.75, 0, 0]
