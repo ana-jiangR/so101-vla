@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Run outputs (logs, videos, images)
+outputs/
+
+# MuJoCo
+MUJOCO_LOG.TXT
+
+.vscode/
+.idea/

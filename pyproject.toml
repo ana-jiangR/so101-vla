@@ -1,0 +1,34 @@
+[project]
+name = "so101-vla"
+version = "0.1.0"
+description = "SO-ARM101 MuJoCo simulation, low-level control, and VLA integration"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mujoco>=3.3,<4",
+    "numpy>=2.0,<3",
+    "pyyaml>=6.0,<7",
+]
+
+[project.optional-dependencies]
+# Stage 2 (pretrained VLA) dependencies are added here later, so Stage 1
+# installs without torch / CUDA.
+vla = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "so101_vla"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "viewer: needs an interactive display (skipped by default)",
+]
