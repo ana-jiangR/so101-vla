@@ -130,6 +130,10 @@ convention. When real hardware is connected, check this against a known pose.
 - World: z up, floor at z = 0. Each arm base sits at its configured `mount`.
 - `gripperframe` site: approximate tool center point (`MuJoCoRobot.ee_position`).
 - `wrist_cam` camera on the `camera_mount` body (fovy 61°).
+- Tabletop scene (Stage 2): `front` and `top` cameras from LeRobot's scene, plus cameras from the
+  robot config (`cameras:`, e.g. `head`), placed by position + look-at target. MuJoCo cameras look
+  along their −Z axis with +X right and +Y up in the image (MuJoCo modeling docs). The table top is
+  at z = 0 and the arm base sits on it at the origin.
 - Elements of each attached arm are prefixed `"<arm>/"`, e.g. `main/elbow_flex`.
   (LeRobot's single-arm env attaches with no prefix.)
 

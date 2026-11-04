@@ -8,8 +8,8 @@ robot with a head camera. See [design.md](design.md) for the full brief.
 | Stage | Status |
 |-------|--------|
 | 1. Low-level control + teleoperation in MuJoCo | **done** (sim) |
-| 2. Pretrained SmolVLA in simulation | not started |
-| 3. Demonstrations + fine-tuning | future |
+| 2. Pretrained SmolVLA in simulation | **done**: pipeline runs closed loop; zero-shot results in [docs/stage2.md](docs/stage2.md) |
+| 3. Demonstrations + fine-tuning | next: simulation first (plan below), real hardware later |
 
 Where an official source exists, we follow it. The robot model, its commit, the
 units, the 30 Hz rate, and the home pose all match LeRobot's official
@@ -35,7 +35,11 @@ assumption. We also follow its "hold on fault" behaviour. We kept our own small,
 tested stack instead of depending on the framework: it already handles two arms,
 teleop and the 30 Hz LeRobot timing, and Strands brings in agents, a mesh network
 and multiple simulator backends that this project doesn't need. Its LeRobot policy
-runner is the reference for Stage 2.
+runner was the reference for Stage 2's name, camera and unit matching.
+
+Stage 2 uses LeRobot's official tabletop scene and its success test, and runs SmolVLA
+only through LeRobot's own loading and `lerobot-eval` inference steps. Where each
+piece comes from is listed in [docs/stage2.md](docs/stage2.md).
 
 ## Roadmap
 
@@ -43,15 +47,26 @@ runner is the reference for Stage 2.
    `RobotInterface` with a MuJoCo backend, safety filter, trajectories, tracking logs,
    wrist-camera rendering, LeRobot-format observations, a virtual leader → simulated
    follower, and a command selector with one active source.
-2. **Stage 2: pretrained SmolVLA in simulation (next).** Tabletop scene with a cube,
-   target and head camera; load `lerobot/smolvla_base` with LeRobot's APIs; offline
-   inference first, then closed-loop control with action chunks through the same
-   `CommandSelector` → `SafetyFilter` path; zero-shot evaluation at three levels
-   (inference / control / task success). Dependencies go in the `vla` extra.
-3. **Stage 3: demonstrations and fine-tuning (future, documented only).** Record
-   teleop episodes (the `TeleopLog` arrays already hold leader/commanded/measured per
-   tick) as a LeRobotDataset, fine-tune SmolVLA, compare against zero-shot, then real
-   leader/follower data. Nothing in Stages 1–2 depends on training code.
+2. **Stage 2: pretrained SmolVLA in simulation (done).** LeRobot's tabletop scene (one
+   cube, green box as target) with top, front, wrist and an egocentric head camera;
+   `lerobot/smolvla_base` loaded with LeRobot's APIs; offline inference, then closed-loop
+   chunk execution through the same `CommandSelector` → `SafetyFilter` path; zero-shot
+   evaluation at three levels (inference / control / task success). Dependencies are in
+   the `vla` extra.
+3. **Stage 3: demonstrations and fine-tuning (next, simulation first).** Zero-shot
+   `smolvla_base` does not solve the task, and the official docs say it must be
+   fine-tuned on the target robot and task. Plan:
+   1. record demonstrations in this MuJoCo scene, using a scripted expert policy
+      (many episodes, automatically), the on-screen sliders, or later a real leader
+      arm driving the simulated follower (already supported by `CommandSelector`)
+   2. save them as a LeRobotDataset (`TeleopLog` / `PolicySource` logs already hold
+      the per-tick state, actions and camera frames)
+   3. fine-tune `smolvla_base` with `lerobot-train` (this also gives correct SO-101
+      normalization stats), and compare against the Stage 2 zero-shot results with
+      the same `m6`/`m7` scripts; try 10 / 50 / 100–200 demonstrations
+   4. with hardware: real leader → real follower demonstrations and sim-to-real tests
+
+   Only step 4 needs the physical arms. Nothing in Stages 1–2 depends on training code.
 
 Bimanual "duck" robot: every API is keyed by arm name, and the two-arm config builds
 and is tested. Observations use LeRobot's `left_`/`right_` keys.
@@ -63,6 +78,12 @@ uv sync
 uv run pytest
 uv run python scripts/m2_joint_demo.py      # scripted joint/gripper/trajectory demo
 uv run python scripts/m3_teleop_demo.py     # drive the arm with on-screen sliders
+
+uv run python scripts/m4_tabletop_scene.py       # Stage 2 scene + camera images (no GPU)
+uv sync --extra vla                              # Stage 2: torch (CUDA) + LeRobot
+uv run python scripts/m5_offline_inference.py    # SmolVLA prediction only, robot doesn't move
+uv run python scripts/m6_vla_closed_loop.py      # SmolVLA drives the arm (viewer)
+uv run python scripts/m7_zero_shot_eval.py       # zero-shot evaluation, headless (~10 min)
 ```
 
 See [docs/setup-windows.md](docs/setup-windows.md) for details.
@@ -71,25 +92,30 @@ See [docs/setup-windows.md](docs/setup-windows.md) for details.
 
 ```text
 assets/robotstudio_so101/  MuJoCo Menagerie SO-101 (Apache-2.0, unmodified, commit pinned by LeRobot)
-assets/scenes/             our scenes; arms are attached in code (as LeRobot's env does)
-configs/robot/             arms, mounts, rates, safety limits, named poses
+assets/lerobot_tabletop/   LeRobot's SO-101 tabletop scene (Apache-2.0) + our one-cube variant
+assets/scenes/             our Stage 1 scene; arms are attached in code (as LeRobot's env does)
+configs/robot/             arms, mounts, rates, safety limits, named poses, extra cameras
+configs/policy/            SmolVLA checkpoint, camera mapping, stats mode
 src/so101_vla/
   conventions.py           joint order, units, LeRobot <-> radians conversion (one place)
   config.py                YAML -> dataclasses
   robot/                   RobotInterface (backend contract) + MuJoCoRobot
   control/                 SafetyFilter, trajectories, ArmController (numpy only)
   teleop/                  virtual leaders, CommandSelector (one active source)
-  sim/                     scene composition, real-time viewer
-scripts/                   m1_* m2_* m3_* milestone demos, asset fetcher
+  sim/                     scene composition, cameras, real-time viewer, tabletop task metrics
+  policies/                SmolVLA via LeRobot, action-chunk validator, policy as command source
+  evaluation/              closed-loop episodes, three-level results
+  utils/                   PNG output
+scripts/                   m1_* … m7_* milestone demos, asset fetchers
 tests/                     headless pytest suite
-docs/                      conventions (joint/unit findings), setup, sample_logs/
+docs/                      conventions, setup, Stage 2 report (stage2.md), sample_logs/
 ```
 
 ## Architecture
 
 ```text
  command sources (LeRobot-style get_action(): degrees, gripper 0..100)
-   SliderLeader | TrajectoryLeader | lerobot SO101Leader (future) | VLA policy (Stage 2)
+   SliderLeader | TrajectoryLeader | lerobot SO101Leader (future) | PolicySource (SmolVLA, Stage 2)
         |
  CommandSelector ── one active source; safe engage on start/switch
         |
@@ -134,6 +160,24 @@ obs = robot.get_observation(cameras=["main/wrist_cam"])     # LeRobot format:
 # {"shoulder_pan.pos": deg, ..., "gripper.pos": 0..100, "main/wrist_cam": image}
 ```
 
+Pretrained SmolVLA as a command source (needs `uv sync --extra vla`):
+
+```python
+from so101_vla.policies import PolicySource
+from so101_vla.policies.smolvla import SmolVLAPolicy, load_smolvla_config
+from so101_vla.teleop import CommandSelector
+
+cfg = load_robot_config("configs/robot/so101_tabletop.yaml")
+robot = MuJoCoRobot.from_config(cfg)
+ctrl = ArmController.from_config(robot, cfg)
+ctrl.reset("home")
+policy = SmolVLAPolicy(load_smolvla_config("configs/policy/smolvla_base.yaml"))
+source = PolicySource.for_robot(robot, policy, "Pick up the cube.")   # validated action chunks
+sel = CommandSelector(ctrl, "main", {"policy": source})
+sel.select("policy")
+sel.run(10.0)            # re-observes and predicts a new chunk every 50 actions
+```
+
 Teleoperation from any LeRobot-style source:
 
 ```python
@@ -158,6 +202,18 @@ sel.log.save("outputs/my_teleop", ctrl.dt)
   The follower lags by one 30 Hz control period (33 ms). Compute takes about 0.4 ms per tick against a
   33 ms budget. Switching sources re-engages without jumps.
 
+## Stage 2 results (simulation, zero-shot `smolvla_base`)
+
+18 episodes (the design's 3 instructions × 3 seeds × 2 normalization conditions), details in
+[docs/stage2.md](docs/stage2.md):
+
+- **Level 1, inference: 18/18.** Valid (50, 6) chunks; ~0.8 s per chunk, 0.9 GiB VRAM on an RTX 4060 laptop GPU.
+- **Level 2, robot control: 9/18.** Every action was validated and clipped to the joint limits. The 9 failures are the
+  "checkpoint stats" runs, where the arm reached toward the cube but pressed on the table.
+- **Level 3, task success: 0/18.** The cube was touched in 5 episodes but never grasped.
+- The checkpoint's saved normalization stats don't apply in LeRobot 0.6.1, and they describe SO-100
+  (old calibration) data. The official docs present `smolvla_base` as a base model for fine-tuning.
+
 Sample outputs from these runs are in [docs/sample_logs/](docs/sample_logs/).
 
 ## Known limitations
@@ -166,8 +222,9 @@ Sample outputs from these runs are in [docs/sample_logs/](docs/sample_logs/).
 - Real hardware isn't connected yet. The interfaces match LeRobot's `SO101Leader` / `SO101Follower`, but
   the real-leader → sim-follower and real → real paths are untested, and real-arm calibration offsets
   against the sim zero haven't been checked.
-- Collision checking covers the floor only. There is no self-collision analysis or motion planning; safe
-  engage moves in a straight line in joint space.
+- The safety layer checks joint limits only. Contacts with the floor/table are measured (tests, Stage 2
+  evaluation) but not prevented; there is no self-collision analysis or motion planning, and safe engage
+  moves in a straight line in joint space.
 - Velocity/acceleration limits (1.5 rad/s, 6 rad/s²) are conservative defaults, not measured servo limits.
 - `reset()` teleports the robot, which only works in simulation. Real hardware must use `move_to()`.
 - The bimanual config exists, but teleop currently routes one source to one arm (`key_prefix` can pick
@@ -175,4 +232,12 @@ Sample outputs from these runs are in [docs/sample_logs/](docs/sample_logs/).
 - Real calibration only matches the sim zero if each joint is swept through its full range during
   `lerobot-calibrate`. The real gripper's 0..100 spans the recorded range, not the sim's. In degrees mode,
   `wrist_roll` may be offset by about 2.8° between real and sim (asymmetric MJCF range). See docs/conventions.md.
-- Only the arm's wrist camera exists so far. The head/overview camera and the tabletop scene are Stage 2 (Task 2.1–2.2).
+- Zero-shot SmolVLA does not solve the task (see docs/stage2.md). `smolvla_base`'s saved normalization stats
+  don't apply in LeRobot 0.6.1 (legacy keys) and describe SO-100 old-calibration data; there is no documented
+  mapping to SO-101 units. Fine-tuning on SO-101 data (Stage 3) is the documented route.
+- Inference is synchronous (sim time pauses during the ~0.8 s per chunk); LeRobot's asynchronous inference
+  (needed on real hardware for smooth motion) is not used yet.
+- The policy sees the `top`, `wrist` and `front` cameras (SmolVLA's pretraining order). From the start pose the
+  wrist camera does not see the cube, and in the top view the cube is ~10 px wide and partly hidden by the arm.
+  The egocentric `head` camera is rendered but not fed to the policy by default (`camera_map` in
+  `configs/policy/smolvla_base.yaml`).

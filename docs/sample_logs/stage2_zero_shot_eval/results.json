@@ -1,0 +1,1099 @@
+{
+  "config": {
+    "robot_config": "configs/robot/so101_tabletop.yaml",
+    "policy_config": "configs/policy/smolvla_base.yaml",
+    "stats_modes": [
+      "as_shipped",
+      "checkpoint_action_stats"
+    ],
+    "instructions": [
+      "Move the gripper toward the cube.",
+      "Pick up the cube.",
+      "Place the cube in the target area."
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "seconds": 30.0
+  },
+  "summary": [
+    {
+      "stats_mode": "as_shipped",
+      "instruction": "Move the gripper toward the cube.",
+      "episodes": 3,
+      "level1_inference": 3,
+      "level2_control": 3,
+      "level3_success": 0,
+      "touched_cube": 0,
+      "grasped_cube": 0,
+      "min_gripper_to_cube_cm_mean": 12.2,
+      "clipped_ticks_mean": 448.0,
+      "table_contact_ticks_mean": 0.0,
+      "inference_ms_mean": 832.0
+    },
+    {
+      "stats_mode": "as_shipped",
+      "instruction": "Pick up the cube.",
+      "episodes": 3,
+      "level1_inference": 3,
+      "level2_control": 3,
+      "level3_success": 0,
+      "touched_cube": 0,
+      "grasped_cube": 0,
+      "min_gripper_to_cube_cm_mean": 12.2,
+      "clipped_ticks_mean": 320.0,
+      "table_contact_ticks_mean": 0.0,
+      "inference_ms_mean": 813.0
+    },
+    {
+      "stats_mode": "as_shipped",
+      "instruction": "Place the cube in the target area.",
+      "episodes": 3,
+      "level1_inference": 3,
+      "level2_control": 3,
+      "level3_success": 0,
+      "touched_cube": 0,
+      "grasped_cube": 0,
+      "min_gripper_to_cube_cm_mean": 12.2,
+      "clipped_ticks_mean": 736.3,
+      "table_contact_ticks_mean": 0.0,
+      "inference_ms_mean": 824.0
+    },
+    {
+      "stats_mode": "checkpoint_action_stats",
+      "instruction": "Move the gripper toward the cube.",
+      "episodes": 3,
+      "level1_inference": 3,
+      "level2_control": 0,
+      "level3_success": 0,
+      "touched_cube": 1,
+      "grasped_cube": 0,
+      "min_gripper_to_cube_cm_mean": 3.8,
+      "clipped_ticks_mean": 40.7,
+      "table_contact_ticks_mean": 819.0,
+      "inference_ms_mean": 814.0
+    },
+    {
+      "stats_mode": "checkpoint_action_stats",
+      "instruction": "Pick up the cube.",
+      "episodes": 3,
+      "level1_inference": 3,
+      "level2_control": 0,
+      "level3_success": 0,
+      "touched_cube": 1,
+      "grasped_cube": 0,
+      "min_gripper_to_cube_cm_mean": 4.5,
+      "clipped_ticks_mean": 123.3,
+      "table_contact_ticks_mean": 794.0,
+      "inference_ms_mean": 800.0
+    },
+    {
+      "stats_mode": "checkpoint_action_stats",
+      "instruction": "Place the cube in the target area.",
+      "episodes": 3,
+      "level1_inference": 3,
+      "level2_control": 0,
+      "level3_success": 0,
+      "touched_cube": 3,
+      "grasped_cube": 0,
+      "min_gripper_to_cube_cm_mean": 2.8,
+      "clipped_ticks_mean": 7.3,
+      "table_contact_ticks_mean": 699.0,
+      "inference_ms_mean": 813.0
+    }
+  ],
+  "episodes": [
+    {
+      "instruction": "Move the gripper toward the cube.",
+      "seed": 0,
+      "layout": {
+        "seed": 0,
+        "cube_xy": [
+          0.235,
+          -0.0561
+        ],
+        "cube_yaw": -0.4858,
+        "box_xy": [
+          0.2338,
+          0.1263
+        ],
+        "arm_pose": [
+          0.0096,
+          -1.0633,
+          1.0152,
+          0.5771,
+          0.0219,
+          0.4096
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 21.7,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 871.8,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 12,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 345
+      },
+      "ticks_position_clipped": 341,
+      "ticks_rate_limited": 131,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1383,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Move the gripper toward the cube.",
+      "seed": 1,
+      "layout": {
+        "seed": 1,
+        "cube_xy": [
+          0.2346,
+          -0.0477
+        ],
+        "cube_yaw": 1.8123,
+        "box_xy": [
+          0.2146,
+          0.1265
+        ],
+        "arm_pose": [
+          0.0008,
+          -1.0157,
+          1.0224,
+          0.6422,
+          -0.0131,
+          0.4266
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.9,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 811.9,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 15,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 541
+      },
+      "ticks_position_clipped": 532,
+      "ticks_rate_limited": 67,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1165,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Move the gripper toward the cube.",
+      "seed": 2,
+      "layout": {
+        "seed": 2,
+        "cube_xy": [
+          0.2489,
+          0.0174
+        ],
+        "cube_yaw": -2.1987,
+        "box_xy": [
+          0.1933,
+          0.1182
+        ],
+        "arm_pose": [
+          -0.0166,
+          -1.0613,
+          1.0691,
+          0.5824,
+          0.007,
+          0.3775
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.3,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 812.8,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 17,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 484
+      },
+      "ticks_position_clipped": 471,
+      "ticks_rate_limited": 86,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1098,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Pick up the cube.",
+      "seed": 0,
+      "layout": {
+        "seed": 0,
+        "cube_xy": [
+          0.235,
+          -0.0561
+        ],
+        "cube_yaw": -0.4858,
+        "box_xy": [
+          0.2338,
+          0.1263
+        ],
+        "arm_pose": [
+          0.0096,
+          -1.0633,
+          1.0152,
+          0.5771,
+          0.0219,
+          0.4096
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.7,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 832.2,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 15,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 362
+      },
+      "ticks_position_clipped": 346,
+      "ticks_rate_limited": 203,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1383,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Pick up the cube.",
+      "seed": 1,
+      "layout": {
+        "seed": 1,
+        "cube_xy": [
+          0.2346,
+          -0.0477
+        ],
+        "cube_yaw": 1.8123,
+        "box_xy": [
+          0.2146,
+          0.1265
+        ],
+        "arm_pose": [
+          0.0008,
+          -1.0157,
+          1.0224,
+          0.6422,
+          -0.0131,
+          0.4266
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.1,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 799.9,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 14,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 343
+      },
+      "ticks_position_clipped": 343,
+      "ticks_rate_limited": 178,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1165,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Pick up the cube.",
+      "seed": 2,
+      "layout": {
+        "seed": 2,
+        "cube_xy": [
+          0.2489,
+          0.0174
+        ],
+        "cube_yaw": -2.1987,
+        "box_xy": [
+          0.1933,
+          0.1182
+        ],
+        "arm_pose": [
+          -0.0166,
+          -1.0613,
+          1.0691,
+          0.5824,
+          0.007,
+          0.3775
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.1,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 807.3,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 11,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 272
+      },
+      "ticks_position_clipped": 271,
+      "ticks_rate_limited": 160,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1099,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Place the cube in the target area.",
+      "seed": 0,
+      "layout": {
+        "seed": 0,
+        "cube_xy": [
+          0.235,
+          -0.0561
+        ],
+        "cube_yaw": -0.4858,
+        "box_xy": [
+          0.2338,
+          0.1263
+        ],
+        "arm_pose": [
+          0.0096,
+          -1.0633,
+          1.0152,
+          0.5771,
+          0.0219,
+          0.4096
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.2,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 800.6,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 18,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 748
+      },
+      "ticks_position_clipped": 714,
+      "ticks_rate_limited": 115,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1382,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Place the cube in the target area.",
+      "seed": 1,
+      "layout": {
+        "seed": 1,
+        "cube_xy": [
+          0.2346,
+          -0.0477
+        ],
+        "cube_yaw": 1.8123,
+        "box_xy": [
+          0.2146,
+          0.1265
+        ],
+        "arm_pose": [
+          0.0008,
+          -1.0157,
+          1.0224,
+          0.6422,
+          -0.0131,
+          0.4266
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.7,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 832.9,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 18,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 786
+      },
+      "ticks_position_clipped": 752,
+      "ticks_rate_limited": 106,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1165,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Place the cube in the target area.",
+      "seed": 2,
+      "layout": {
+        "seed": 2,
+        "cube_xy": [
+          0.2489,
+          0.0174
+        ],
+        "cube_yaw": -2.1987,
+        "box_xy": [
+          0.1933,
+          0.1182
+        ],
+        "arm_pose": [
+          -0.0166,
+          -1.0613,
+          1.0691,
+          0.5824,
+          0.007,
+          0.3775
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.8,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 838.2,
+      "level1_inference": true,
+      "level2_control": true,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 18,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 779
+      },
+      "ticks_position_clipped": 743,
+      "ticks_rate_limited": 112,
+      "ticks_arm_touching_table": 0,
+      "progress": {
+        "min_gripper_to_cube_m": 0.1098,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "as_shipped"
+    },
+    {
+      "instruction": "Move the gripper toward the cube.",
+      "seed": 0,
+      "layout": {
+        "seed": 0,
+        "cube_xy": [
+          0.235,
+          -0.0561
+        ],
+        "cube_yaw": -0.4858,
+        "box_xy": [
+          0.2338,
+          0.1263
+        ],
+        "arm_pose": [
+          0.0096,
+          -1.0633,
+          1.0152,
+          0.5771,
+          0.0219,
+          0.4096
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.4,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 799.3,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 6,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 9,
+        "elbow_flex": 4,
+        "wrist_flex": 35,
+        "wrist_roll": 0,
+        "gripper": 0
+      },
+      "ticks_position_clipped": 59,
+      "ticks_rate_limited": 897,
+      "ticks_arm_touching_table": 817,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0456,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Move the gripper toward the cube.",
+      "seed": 1,
+      "layout": {
+        "seed": 1,
+        "cube_xy": [
+          0.2346,
+          -0.0477
+        ],
+        "cube_yaw": 1.8123,
+        "box_xy": [
+          0.2146,
+          0.1265
+        ],
+        "arm_pose": [
+          0.0008,
+          -1.0157,
+          1.0224,
+          0.6422,
+          -0.0131,
+          0.4266
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.8,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 824.5,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 5,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 8,
+        "elbow_flex": 0,
+        "wrist_flex": 17,
+        "wrist_roll": 0,
+        "gripper": 0
+      },
+      "ticks_position_clipped": 34,
+      "ticks_rate_limited": 881,
+      "ticks_arm_touching_table": 846,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0518,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Move the gripper toward the cube.",
+      "seed": 2,
+      "layout": {
+        "seed": 2,
+        "cube_xy": [
+          0.2489,
+          0.0174
+        ],
+        "cube_yaw": -2.1987,
+        "box_xy": [
+          0.1933,
+          0.1182
+        ],
+        "arm_pose": [
+          -0.0166,
+          -1.0613,
+          1.0691,
+          0.5824,
+          0.007,
+          0.3775
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.7,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 819.7,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 5,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 9,
+        "elbow_flex": 8,
+        "wrist_flex": 11,
+        "wrist_roll": 0,
+        "gripper": 1
+      },
+      "ticks_position_clipped": 29,
+      "ticks_rate_limited": 900,
+      "ticks_arm_touching_table": 794,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0163,
+        "touched_cube": true,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.1094
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Pick up the cube.",
+      "seed": 0,
+      "layout": {
+        "seed": 0,
+        "cube_xy": [
+          0.235,
+          -0.0561
+        ],
+        "cube_yaw": -0.4858,
+        "box_xy": [
+          0.2338,
+          0.1263
+        ],
+        "arm_pose": [
+          0.0096,
+          -1.0633,
+          1.0152,
+          0.5771,
+          0.0219,
+          0.4096
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.3,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 796.5,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 10,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 24,
+        "elbow_flex": 5,
+        "wrist_flex": 18,
+        "wrist_roll": 0,
+        "gripper": 48
+      },
+      "ticks_position_clipped": 105,
+      "ticks_rate_limited": 894,
+      "ticks_arm_touching_table": 792,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0602,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Pick up the cube.",
+      "seed": 1,
+      "layout": {
+        "seed": 1,
+        "cube_xy": [
+          0.2346,
+          -0.0477
+        ],
+        "cube_yaw": 1.8123,
+        "box_xy": [
+          0.2146,
+          0.1265
+        ],
+        "arm_pose": [
+          0.0008,
+          -1.0157,
+          1.0224,
+          0.6422,
+          -0.0131,
+          0.4266
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.3,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 797.0,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 10,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 37,
+        "elbow_flex": 4,
+        "wrist_flex": 37,
+        "wrist_roll": 0,
+        "gripper": 61
+      },
+      "ticks_position_clipped": 155,
+      "ticks_rate_limited": 809,
+      "ticks_arm_touching_table": 745,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0524,
+        "touched_cube": false,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Pick up the cube.",
+      "seed": 2,
+      "layout": {
+        "seed": 2,
+        "cube_xy": [
+          0.2489,
+          0.0174
+        ],
+        "cube_yaw": -2.1987,
+        "box_xy": [
+          0.1933,
+          0.1182
+        ],
+        "arm_pose": [
+          -0.0166,
+          -1.0613,
+          1.0691,
+          0.5824,
+          0.007,
+          0.3775
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.5,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 807.2,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 9,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 2,
+        "elbow_flex": 1,
+        "wrist_flex": 26,
+        "wrist_roll": 0,
+        "gripper": 70
+      },
+      "ticks_position_clipped": 110,
+      "ticks_rate_limited": 878,
+      "ticks_arm_touching_table": 845,
+      "progress": {
+        "min_gripper_to_cube_m": 0.023,
+        "touched_cube": true,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0115
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Place the cube in the target area.",
+      "seed": 0,
+      "layout": {
+        "seed": 0,
+        "cube_xy": [
+          0.235,
+          -0.0561
+        ],
+        "cube_yaw": -0.4858,
+        "box_xy": [
+          0.2338,
+          0.1263
+        ],
+        "arm_pose": [
+          0.0096,
+          -1.0633,
+          1.0152,
+          0.5771,
+          0.0219,
+          0.4096
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.3,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 803.7,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 2,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 9
+      },
+      "ticks_position_clipped": 9,
+      "ticks_rate_limited": 900,
+      "ticks_arm_touching_table": 695,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0225,
+        "touched_cube": true,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0715
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Place the cube in the target area.",
+      "seed": 1,
+      "layout": {
+        "seed": 1,
+        "cube_xy": [
+          0.2346,
+          -0.0477
+        ],
+        "cube_yaw": 1.8123,
+        "box_xy": [
+          0.2146,
+          0.1265
+        ],
+        "arm_pose": [
+          0.0008,
+          -1.0157,
+          1.0224,
+          0.6422,
+          -0.0131,
+          0.4266
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.5,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 812.0,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 0,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 0
+      },
+      "ticks_position_clipped": 0,
+      "ticks_rate_limited": 850,
+      "ticks_arm_touching_table": 761,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0239,
+        "touched_cube": true,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0033
+      },
+      "stats_mode": "checkpoint_action_stats"
+    },
+    {
+      "instruction": "Place the cube in the target area.",
+      "seed": 2,
+      "layout": {
+        "seed": 2,
+        "cube_xy": [
+          0.2489,
+          0.0174
+        ],
+        "cube_yaw": -2.1987,
+        "box_xy": [
+          0.1933,
+          0.1182
+        ],
+        "arm_pose": [
+          -0.0166,
+          -1.0613,
+          1.0691,
+          0.5824,
+          0.007,
+          0.3775
+        ]
+      },
+      "stop": "timeout",
+      "sim_seconds": 30.0,
+      "wall_seconds": 18.7,
+      "chunks": 18,
+      "actions_executed": 900,
+      "inference_ms_mean": 823.8,
+      "level1_inference": true,
+      "level2_control": false,
+      "level3_success": false,
+      "source_errors": [],
+      "chunks_with_out_of_range_actions": 1,
+      "out_of_range_action_steps": {
+        "shoulder_pan": 0,
+        "shoulder_lift": 0,
+        "elbow_flex": 0,
+        "wrist_flex": 0,
+        "wrist_roll": 0,
+        "gripper": 13
+      },
+      "ticks_position_clipped": 13,
+      "ticks_rate_limited": 898,
+      "ticks_arm_touching_table": 641,
+      "progress": {
+        "min_gripper_to_cube_m": 0.0372,
+        "touched_cube": true,
+        "grasped_cube": false,
+        "lifted_cube": false,
+        "cube_in_box_at_end": false,
+        "cube_moved_m": 0.0757
+      },
+      "stats_mode": "checkpoint_action_stats"
+    }
+  ]
+}

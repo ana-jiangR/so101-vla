@@ -1,0 +1,175 @@
+{
+  "instruction": "Pick up the red cube and place it in the green box.",
+  "seed": 0,
+  "layout": {
+    "seed": 0,
+    "cube_xy": [
+      0.235,
+      -0.0561
+    ],
+    "cube_yaw": -0.4858,
+    "box_xy": [
+      0.2338,
+      0.1263
+    ],
+    "arm_pose": [
+      0.0096,
+      -1.0633,
+      1.0152,
+      0.5771,
+      0.0219,
+      0.4096
+    ]
+  },
+  "observation_time_s": 0.0,
+  "inference_ms": [
+    2576.1874000017997,
+    835.4440999974031,
+    807.2663999919314
+  ],
+  "policy": {
+    "checkpoint": "lerobot/smolvla_base",
+    "revision": "5e8d12a6e2975b0e5e5fce7c8caf47c371d257b6",
+    "input_features": {
+      "observation.state": {
+        "type": "STATE",
+        "shape": [
+          6
+        ]
+      },
+      "observation.images.camera1": {
+        "type": "VISUAL",
+        "shape": [
+          3,
+          256,
+          256
+        ]
+      },
+      "observation.images.camera2": {
+        "type": "VISUAL",
+        "shape": [
+          3,
+          256,
+          256
+        ]
+      },
+      "observation.images.camera3": {
+        "type": "VISUAL",
+        "shape": [
+          3,
+          256,
+          256
+        ]
+      }
+    },
+    "output_features": {
+      "action": {
+        "type": "ACTION",
+        "shape": [
+          6
+        ]
+      }
+    },
+    "chunk_size": 50,
+    "n_action_steps": 50,
+    "normalization_mapping": {
+      "VISUAL": "IDENTITY",
+      "STATE": "MEAN_STD",
+      "ACTION": "MEAN_STD"
+    },
+    "resize_imgs_with_padding": [
+      512,
+      512
+    ],
+    "max_state_dim": 32,
+    "max_action_dim": 32,
+    "num_flow_steps": 10,
+    "vlm": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+    "device": "cuda",
+    "camera_map": {
+      "camera1": "top",
+      "camera2": "main/wrist_cam",
+      "camera3": "front"
+    },
+    "image_size": [
+      256,
+      256
+    ],
+    "stats_mode": "as_shipped",
+    "normalizer_stats_keys_loaded": {
+      "preprocessor.NormalizerProcessorStep": [
+        "so100-blue.buffer.action",
+        "so100-red.buffer.action",
+        "so100.buffer.action"
+      ],
+      "postprocessor.UnnormalizerProcessorStep": [
+        "so100-blue.buffer.action",
+        "so100-red.buffer.action",
+        "so100.buffer.action"
+      ]
+    },
+    "stats_applied_to": "none (keys do not match 'action'/'observation.state')",
+    "load_seconds": 34.2
+  },
+  "validation": {
+    "steps": 50,
+    "finite": true,
+    "out_of_range_steps": {
+      "shoulder_pan": 0,
+      "shoulder_lift": 0,
+      "elbow_flex": 0,
+      "wrist_flex": 0,
+      "wrist_roll": 0,
+      "gripper": 5
+    },
+    "max_excess": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": 0.0,
+      "elbow_flex": 0.0,
+      "wrist_flex": 0.0,
+      "wrist_roll": 0.0,
+      "gripper": 0.809
+    },
+    "first_step_distance": {
+      "shoulder_pan": 0.114,
+      "shoulder_lift": 60.951,
+      "elbow_flex": 59.439,
+      "wrist_flex": 32.736,
+      "wrist_roll": 0.613,
+      "gripper": 31.201
+    },
+    "max_step_change": {
+      "shoulder_pan": 0.605,
+      "shoulder_lift": 0.2,
+      "elbow_flex": 0.757,
+      "wrist_flex": 0.392,
+      "wrist_roll": 0.227,
+      "gripper": 2.546
+    },
+    "min": {
+      "shoulder_pan": 0.034,
+      "shoulder_lift": -0.538,
+      "elbow_flex": -2.57,
+      "wrist_flex": -1.234,
+      "wrist_roll": 0.606,
+      "gripper": -0.809
+    },
+    "max": {
+      "shoulder_pan": 2.77,
+      "shoulder_lift": 0.164,
+      "elbow_flex": 0.937,
+      "wrist_flex": 0.545,
+      "wrist_roll": 1.855,
+      "gripper": 6.116
+    },
+    "any_out_of_range": true
+  },
+  "sampling_spread": {
+    "shoulder_pan": 1.2734999656677246,
+    "shoulder_lift": 0.2305999994277954,
+    "elbow_flex": 0.5889000296592712,
+    "wrist_flex": 0.3898000121116638,
+    "wrist_roll": 0.3433000147342682,
+    "gripper": 1.2716000080108643
+  }
+}

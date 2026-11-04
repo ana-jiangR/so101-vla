@@ -34,3 +34,15 @@ Replay one of these logs on the simulated follower:
 ```powershell
 uv run python scripts/m3_teleop_demo.py --leader replay --log docs/sample_logs/teleop_sweep_switch/teleop.npz
 ```
+
+## Stage 2 (SmolVLA, zero-shot)
+
+| Folder | Command | Contents |
+|---|---|---|
+| `stage2_offline_inference_as_shipped/`, `…_checkpoint_action_stats/` | `uv run python scripts/m5_offline_inference.py [--stats-mode …]` | the three 256×256 input images, the state, three predicted 50×6 chunks (`sample.npz`), the checkpoint description and the validation report (`sample.json`). The robot is not moved |
+| `stage2_zero_shot_eval/` | `uv run python scripts/m7_zero_shot_eval.py` | `results.md` / `results.json` for all 18 episodes, plus one full episode per stats mode ("Place the cube in the target area.", seed 2): `episode.json` (levels, progress, per-chunk validation), the first and last image the policy saw per camera, and the teleop/tracking summaries |
+
+Episode folders under `outputs/` also hold `policy.npz` (every predicted chunk, every executed
+action, the camera frames per chunk) and `task_state.npz` (cube and gripper positions and
+contact flags every tick); those are left out here for size. Results are discussed in
+[docs/stage2.md](../stage2.md).

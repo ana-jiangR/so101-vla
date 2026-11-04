@@ -1,0 +1,48 @@
+{
+  "ticks": 900,
+  "duration_s": 30.0,
+  "engaged_ticks": 886,
+  "events": [
+    {
+      "t": 0.0,
+      "select": "policy"
+    },
+    {
+      "t": 0.4667,
+      "engaged": "policy"
+    }
+  ],
+  "leader_to_follower_error_rad": {
+    "max_abs": {
+      "shoulder_pan": 0.1346,
+      "shoulder_lift": 1.6722,
+      "elbow_flex": 0.6534,
+      "wrist_flex": 0.3235,
+      "wrist_roll": 0.1364,
+      "gripper": 0.0617
+    },
+    "rms": {
+      "shoulder_pan": 0.0373,
+      "shoulder_lift": 0.4583,
+      "elbow_flex": 0.217,
+      "wrist_flex": 0.094,
+      "wrist_roll": 0.028,
+      "gripper": 0.008
+    }
+  },
+  "follower_lag_ms": {
+    "shoulder_pan": 218.2,
+    "shoulder_lift": 33.3,
+    "elbow_flex": 379.1,
+    "wrist_flex": 115.7,
+    "wrist_roll": 89.8,
+    "gripper": 65.0
+  },
+  "follower_lag_note": "delay from leader sample to matching follower position, including one control period of zero-order hold",
+  "compute_latency_ms": {
+    "mean": 20.622,
+    "p95": 1.142,
+    "max": 3643.925,
+    "budget": 33.333
+  }
+}

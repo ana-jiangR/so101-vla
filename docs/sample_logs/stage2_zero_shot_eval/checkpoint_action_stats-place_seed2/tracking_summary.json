@@ -1,0 +1,24 @@
+{
+  "ticks": 900,
+  "main": {
+    "max_abs_error_rad": {
+      "shoulder_pan": 0.14717,
+      "shoulder_lift": 1.61048,
+      "elbow_flex": 0.70871,
+      "wrist_flex": 0.37574,
+      "wrist_roll": 0.00975,
+      "gripper": 0.0098
+    },
+    "rms_error_rad": {
+      "shoulder_pan": 0.04025,
+      "shoulder_lift": 0.60387,
+      "elbow_flex": 0.21515,
+      "wrist_flex": 0.08677,
+      "wrist_roll": 0.00224,
+      "gripper": 0.00128
+    },
+    "ticks_position_clipped": 13,
+    "ticks_rate_limited": 898,
+    "ticks_relative_limited": 0
+  }
+}

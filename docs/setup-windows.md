@@ -32,11 +32,29 @@ This command:
 |---|---|---|---|
 | Python | 3.12.14 | 3.12.x | design brief; LeRobot supports 3.12 |
 | mujoco | 3.17.0 | >=3.3, <4 | needs `MjSpec.attach` and `mj_step(nstep=)`; 4.x may change the API |
-| numpy | 2.5.4 | >=2.0, <3 | |
+| numpy | 2.2.6 | >=2.0, <3 | lerobot 0.6.1 needs <2.3, and uv resolves one version for all extras |
 | pyyaml | 6.0.3 | >=6.0, <7 | |
 | pytest (dev) | 9.2.0 | >=8.0 | |
+| lerobot[smolvla] (`vla` extra) | 0.6.1 | ==0.6.1 | Stage 2 calls its APIs directly; pinned so they don't move |
+| torch (`vla` extra) | 2.11.0+cu128 | >=2.7, <2.12 | lerobot 0.6.1's range; CUDA 12.8 wheels from download.pytorch.org |
+| transformers (`vla` extra) | 5.5.4 | via lerobot | |
 
-Stage 2 (torch, LeRobot, SmolVLA) goes in the `vla` extra so Stage 1 never pulls in CUDA.
+Stage 2 (torch, LeRobot, SmolVLA) is in the `vla` extra, so a plain `uv sync` never pulls in CUDA.
+
+## 2b. Stage 2 (SmolVLA): GPU environment
+
+```powershell
+uv sync --extra vla
+uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+```
+
+- About 3 GB of wheels (PyTorch with CUDA 12.8). Tested on an RTX 4060 Laptop GPU (8 GB) with
+  driver 617; SmolVLA needs about 0.9 GiB of VRAM for inference.
+- The first `m5_offline_inference.py` run downloads `lerobot/smolvla_base` (~1 GB) and the SmolVLM2
+  tokenizer into `%USERPROFILE%\.cache\huggingface`. No Hugging Face login is needed.
+- Hugging Face prints "To support symlinks on Windows, you either need to activate Developer Mode…".
+  It is harmless (the cache copies files instead). Set `HF_HUB_DISABLE_SYMLINKS_WARNING=1` to hide it.
+- No GPU: pass `--device cpu` to `m5_offline_inference.py` (much slower).
 
 ## 3. Check it works
 
@@ -48,6 +66,12 @@ uv run python scripts/m2_joint_demo.py          # viewer, joint-by-joint + traje
 uv run python scripts/m2_gripper_demo.py        # gripper open/close
 uv run python scripts/m3_teleop_demo.py         # slider window drives the arm (virtual leader)
 uv run python scripts/m3_teleop_demo.py --leader sweep --headless --switch-demo
+
+# Stage 2 (after `uv sync --extra vla`)
+uv run python scripts/m4_tabletop_scene.py      # tabletop scene, saves every camera view
+uv run python scripts/m5_offline_inference.py   # SmolVLA inference only, robot does not move
+uv run python scripts/m6_vla_closed_loop.py     # SmolVLA drives the arm, viewer in real time
+uv run python scripts/m7_zero_shot_eval.py      # zero-shot evaluation, headless (~10 min)
 ```
 
 Add `--headless` to the m2 demos (and to `m3_teleop_demo.py --leader sweep`) to run
@@ -64,4 +88,6 @@ the Windows Store stub, not the project environment.
 - The viewer uses OpenGL through GLFW. If the window fails to open on a laptop
   with two GPUs, update your graphics drivers, or choose the NVIDIA GPU for
   `python.exe` in Windows Graphics settings.
+- The tabletop scene in `assets/lerobot_tabletop/` is LeRobot's official one (revision `844dee6`),
+  plus our one-cube variant. `uv run python scripts/fetch_tabletop_scene.py` re-fetches it.
 - Run scripts from the repo root. Config paths are relative to it.
