@@ -53,6 +53,9 @@ def main() -> None:
     ap.add_argument("--output-dir", default=None)
     ap.add_argument("--seed", type=int, default=1000)
     ap.add_argument("--dry-run", action="store_true", help="print the command only")
+    ap.add_argument("--stock-query", action="store_true",
+                    help="use LeRobot's own action-chunk query (decodes every image of the chunk; ~15x slower "
+                         "data loading on image datasets, see so101_vla/lerobot_train_fast.py)")
     args, extra = ap.parse_known_args()  # anything else is passed to lerobot-train unchanged
 
     from huggingface_hub import snapshot_download
@@ -60,7 +63,8 @@ def main() -> None:
     base_dir = snapshot_download(BASE, revision=BASE_REVISION)
     tag = f"ep{args.episodes or 'all'}_steps{args.steps}"
     out = resolve_path(args.output_dir or f"outputs/train/smolvla_so101_pick_place_{tag}")
-    cmd = [sys.executable, "-m", "lerobot.scripts.lerobot_train",
+    module = "lerobot.scripts.lerobot_train" if args.stock_query else "so101_vla.lerobot_train_fast"
+    cmd = [sys.executable, "-m", module,
            f"--policy.path={base_dir}", f"--dataset.repo_id={args.repo_id}",
            f"--dataset.root={resolve_path(args.dataset_root)}", f"--rename_map={json.dumps(RENAME)}",
            f"--batch_size={args.batch_size}", f"--steps={args.steps}",
