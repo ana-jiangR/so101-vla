@@ -43,15 +43,24 @@ class ChunkRecord:
 class PolicySource:
     def __init__(self, policy: ChunkPolicy, observe: Callable[[], dict], clock: Callable[[], float],
                  current_q: Callable[[], np.ndarray], validator: ActionChunkValidator, instruction: str,
-                 replan_every: int | None = None, keep_frames: bool = True) -> None:
+                 replan_every: int | None = None, keep_frames: bool = True,
+                 smoothing: float | None = None) -> None:
         """
         observe:       returns ``RobotInterface.get_observation(cameras=policy.camera_names, ...)``
         current_q:     measured joint positions [rad] (for the validation report)
         replan_every:  predict a new chunk after this many actions (None = play whole chunks)
+        smoothing:     None = off; alpha in (0, 1] = exponential moving average on the actions,
+                       out = alpha * action + (1 - alpha) * previous out. Damps the step-to-step
+                       jitter of flow-matching predictions (docs/stage3.md, "Shaking"); adds lag
+                       of about (1 - alpha) / alpha control ticks. Our addition, not a LeRobot feature.
         """
+        if smoothing is not None and not 0 < smoothing <= 1:
+            raise ValueError(f"smoothing must be in (0, 1], got {smoothing}")
         self.policy, self.observe, self.clock, self.current_q = policy, observe, clock, current_q
         self.validator, self.instruction = validator, instruction
-        self.replan_every, self.keep_frames = replan_every, keep_frames
+        self.replan_every, self.keep_frames, self.smoothing = replan_every, keep_frames, smoothing
+        self._smoothed: np.ndarray | None = None
+        self.raw_executed: list[np.ndarray] = []  # policy actions before smoothing
         self.chunks: list[ChunkRecord] = []
         self.executed: list[tuple[float, np.ndarray]] = []  # (sim time, action in LeRobot units)
         self._queue: deque[np.ndarray] = deque()
@@ -60,7 +69,7 @@ class PolicySource:
     @classmethod
     def for_robot(cls, robot, policy: ChunkPolicy, instruction: str, arm: str = "main",
                   replan_every: int | None = None, keep_frames: bool = True,
-                  image_size: tuple[int, int] | None = None) -> PolicySource:
+                  image_size: tuple[int, int] | None = None, smoothing: float | None = None) -> PolicySource:
         """Standard wiring for one arm of a ``RobotInterface``: observation, clock, state, validator."""
         w, h = image_size or getattr(getattr(policy, "config", None), "image_size", (256, 256))
         replan_every = replan_every or getattr(policy, "rtc_replan_every", None)
@@ -68,13 +77,14 @@ class PolicySource:
         return cls(policy, observe=lambda: robot.get_observation(cameras=policy.camera_names, width=w, height=h),
                    clock=lambda: robot.get_state().time, current_q=lambda: robot.get_state().arms[arm].positions,
                    validator=ActionChunkValidator(LeRobotUnits(lim.lower, lim.upper)), instruction=instruction,
-                   replan_every=replan_every, keep_frames=keep_frames)
+                   replan_every=replan_every, keep_frames=keep_frames, smoothing=smoothing)
 
     def reset(self, instruction: str | None = None) -> None:
         if instruction is not None:
             self.instruction = instruction
         self._queue.clear()
         self._played = 0
+        self._smoothed = None
         self.policy.reset()
 
     def _replan(self) -> None:
@@ -96,6 +106,11 @@ class PolicySource:
             self._replan()
         action = self._queue.popleft()
         self._played += 1
+        self.raw_executed.append(action)
+        if self.smoothing is not None:
+            a = self.smoothing
+            self._smoothed = action.copy() if self._smoothed is None else a * action + (1 - a) * self._smoothed
+            action = self._smoothed.copy()
         self.executed.append((self.clock(), action))
         return dict(zip(LEROBOT_FEATURE_NAMES, action.tolist(), strict=True))
 
@@ -108,6 +123,7 @@ class PolicySource:
             "inference_ms": np.array([np.nan if c.inference_ms is None else c.inference_ms for c in self.chunks]),
             "executed_time": np.array([t for t, _ in self.executed]),
             "executed_lerobot": np.array([a for _, a in self.executed]) if self.executed else np.zeros((0, 6)),
+            "raw_executed_lerobot": np.array(self.raw_executed) if self.raw_executed else np.zeros((0, 6)),
         }
         for cam in self.policy.camera_names if self.keep_frames and self.chunks else ():
             out[f"frames/{cam.replace('/', '_')}"] = np.array([c.frames[cam] for c in self.chunks])

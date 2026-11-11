@@ -32,6 +32,8 @@ def main() -> None:
     ap.add_argument("--stats-mode", choices=["as_shipped", "checkpoint_action_stats"], default=None)
     ap.add_argument("--checkpoint", default=None, help="Hub id or local fine-tuned checkpoint (pretrained_model dir)")
     ap.add_argument("--rtc", action="store_true", help="LeRobot Real-Time Chunking (smooth chunk transitions)")
+    ap.add_argument("--smooth", type=float, default=None,
+                    help="EMA action smoothing alpha in (0, 1], e.g. 0.3 (default: off)")
     ap.add_argument("--instruction", default="Pick up the red cube and place it in the green box.")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--seconds", type=float, default=30.0, help="episode timeout (sim time)")
@@ -46,7 +48,7 @@ def main() -> None:
     robot = MuJoCoRobot.from_config(cfg)
     task = PickPlaceTask(robot)
     out = PROJECT_ROOT / "outputs" / f"vla_closed_loop_{pcfg.stats_mode}_seed{args.seed}_{time.strftime('%Y%m%d_%H%M%S')}"
-    source = PolicySource.for_robot(robot, policy, args.instruction, replan_every=args.replan_every)
+    source = PolicySource.for_robot(robot, policy, args.instruction, replan_every=args.replan_every, smoothing=args.smooth)
     try:
         with RealtimeViewer(robot, headless=args.headless) as viewer:
             ctrl = ArmController.from_config(robot, cfg, on_step=viewer)

@@ -133,3 +133,23 @@ def test_run_episode_reports_three_levels_and_saves_logs(setup, tmp_path):
     bad = _source(robot, ctrl, v, FakePolicy(np.full((5, 6), np.inf)))
     res = run_episode(robot, ctrl, task, bad, EpisodeConfig("x", seed=1, max_seconds=1.0))
     assert res["stop"] == "source_error" and not res["level1_inference"] and not res["level2_control"]
+
+
+def test_smoothing_damps_jitter_and_converges(setup):
+    robot, ctrl, v = setup
+    rng = np.random.default_rng(0)
+    target = HOME_LR + np.array([10, 0, 0, 0, 0, 0])
+    jittery = np.tile(target, (40, 1)) + rng.normal(0, 2.0, (40, 6))  # +-2 deg step-to-step noise
+    raw = _source(robot, ctrl, v, FakePolicy(jittery))
+    smooth = _source(robot, ctrl, v, FakePolicy(jittery), smoothing=0.3)
+    for src in (raw, smooth):
+        for _ in range(40):
+            src.get_action()
+    rough = lambda a: np.abs(np.diff(np.asarray(a), 2, axis=0)).mean()  # noqa: E731
+    a_raw = raw.arrays()["executed_lerobot"]
+    a_s = smooth.arrays()["executed_lerobot"]
+    assert rough(a_s) < 0.35 * rough(a_raw)  # much less step-to-step jitter
+    np.testing.assert_allclose(a_s[-10:].mean(0), target, atol=1.5)  # still tracks the target
+    np.testing.assert_array_equal(smooth.arrays()["raw_executed_lerobot"], jittery)  # raw actions kept
+    with pytest.raises(ValueError):
+        _source(robot, ctrl, v, FakePolicy(jittery), smoothing=1.5)

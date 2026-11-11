@@ -37,6 +37,8 @@ def main() -> None:
                     help="default: both for smolvla_base, as_shipped for a fine-tuned checkpoint")
     ap.add_argument("--checkpoint", default=None, help="Hub id or local fine-tuned checkpoint (pretrained_model dir)")
     ap.add_argument("--rtc", action="store_true", help="LeRobot Real-Time Chunking (smooth chunk transitions)")
+    ap.add_argument("--smooth", type=float, default=None,
+                    help="EMA action smoothing alpha in (0, 1], e.g. 0.3 (default: off)")
     ap.add_argument("--tag", default=None, help="name for the results folder")
     ap.add_argument("--instructions", nargs="+", default=INSTRUCTIONS)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
@@ -60,7 +62,7 @@ def main() -> None:
                 ctrl = ArmController.from_config(robot, cfg)
                 task = PickPlaceTask(robot)
                 ep_dir = out / mode / f"{instruction[:-1].lower().replace(' ', '_')}_seed{seed}"
-                res = run_episode(robot, ctrl, task, PolicySource.for_robot(robot, policy, instruction, replan_every=args.replan_every),
+                res = run_episode(robot, ctrl, task, PolicySource.for_robot(robot, policy, instruction, replan_every=args.replan_every, smoothing=args.smooth),
                                   EpisodeConfig(instruction, seed, args.seconds), ep_dir)
                 robot.close()
                 res["stats_mode"] = mode
