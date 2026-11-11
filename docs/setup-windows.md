@@ -45,6 +45,12 @@ Stage 2 (torch, LeRobot, SmolVLA) is in the `vla` extra, so a plain `uv sync` ne
 
 ## 2b. Stage 2 (SmolVLA): GPU environment
 
+> **Note:** `uv sync` makes the environment match *exactly* the extras you name, so a plain `uv sync`
+> uninstalls torch/LeRobot/mink if they were installed (then `m5`–`m9` fail with
+> `No module named 'torch'`). Once you use Stage 2/3, always run `uv sync --extra train`.
+> `uv run ...` by itself does not remove packages.
+
+
 ```powershell
 uv sync --extra vla
 uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"

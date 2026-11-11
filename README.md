@@ -86,6 +86,11 @@ Install only what each stage needs (all versions pinned in `uv.lock`):
 | `uv sync --extra vla` | + Stage 2: PyTorch 2.11 (CUDA 12.8), `lerobot[smolvla]` 0.6.1 | for inference (~0.9 GiB) |
 | `uv sync --extra train` | + Stage 3: `lerobot[training]` (datasets, PyAV, torchcodec), `mink` | for fine-tuning (~3.6 GB at batch 8) |
 
+> **Note:** `uv sync` makes the environment match *exactly* the extras you name, so a plain `uv sync`
+> uninstalls torch/LeRobot/mink if they were installed (then `m5`–`m9` fail with
+> `No module named 'torch'`). Once you use Stage 2/3, always run `uv sync --extra train`.
+> `uv run ...` by itself does not remove packages.
+
 ### Quick start (Windows PowerShell)
 
 ```powershell
