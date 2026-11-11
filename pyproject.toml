@@ -19,13 +19,13 @@ vla = [
     "torchvision",
 ]
 
-# Stage 3 (demonstrations + fine-tuning):  uv sync --extra train
+# Stage 3 + real SO-101 hardware:  uv sync --extra train
 # lerobot[training] brings LeRobotDataset (datasets, pyarrow, PyAV, torchcodec) and
 # lerobot-train's dependencies. mink = differential IK for the scripted expert
 # (LeRobot's own RobotKinematics needs placo, which has no Windows wheels).
 train = [
     "so101-vla[vla]",
-    "lerobot[smolvla,training]==0.6.1",
+    "lerobot[smolvla,training,feetech,pynput-dep]==0.6.1",   # feetech: SO-101 bus; pynput: lerobot-record keys
     "mink>=1.4,<2",
 ]
 
