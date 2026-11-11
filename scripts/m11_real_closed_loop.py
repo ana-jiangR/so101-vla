@@ -15,6 +15,13 @@ then asked to support it before torque is released.
 
     uv run python scripts/m11_real_closed_loop.py                       # pose test, no model
     uv run python scripts/m11_real_closed_loop.py --mode policy --seconds 20
+
+Zero-shot MolmoAct2-SO100/101 (``--policy molmoact2``): two views in any order; one camera fills both
+slots unless ``--camera2-index`` adds a second (e.g. wrist). Inference takes ~2.5 s per 30-action
+chunk on an 8 GB laptop GPU (int8); the arm holds still while it thinks, then plays 1 s of motion.
+Run ``m10_real_offline_check.py --policy molmoact2`` first.
+
+    uv run python scripts/m11_real_closed_loop.py --mode policy --policy molmoact2 --seconds 60
 """
 
 from __future__ import annotations
@@ -46,6 +53,10 @@ def main() -> None:
     ap.add_argument("--slot", choices=["camera1", "camera2", "camera3"], default="camera3",
                     help="policy view the camera stands in for (camera3 = front)")
     ap.add_argument("--checkpoint", default=DEFAULT_CK)
+    ap.add_argument("--policy", choices=["smolvla", "molmoact2"], default="smolvla")
+    ap.add_argument("--policy-config", default="configs/policy/molmoact2_so101.yaml", help="molmoact2 only")
+    ap.add_argument("--camera2-index", type=int, default=None,
+                    help="molmoact2 only: second camera (e.g. wrist); default: reuse the first camera")
     ap.add_argument("--instruction", default="Pick up the red cube and place it in the green box.")
     ap.add_argument("--seconds", type=float, default=20.0, help="policy run time")
     ap.add_argument("--max-velocity", type=float, default=0.5, help="rad/s per joint (sim default 1.5)")
@@ -68,10 +79,17 @@ def main() -> None:
     if args.mode == "policy":
         cams["front"] = OpenCVCameraConfig(index_or_path=args.camera_index, width=640, height=480, fps=30,
                                            rotation=Cv2Rotation({270: -90}.get(args.rotate, args.rotate)))
+        if args.policy == "molmoact2" and args.camera2_index is not None:
+            cams["second"] = OpenCVCameraConfig(index_or_path=args.camera2_index, width=640, height=480, fps=30)
     robot = LeRobotSO101(args.port, args.robot_id, cameras=cams, max_relative_target=args.max_relative_target)
 
     policy = None
-    if args.mode == "policy":  # load the model before touching the arm (takes ~1 min)
+    if args.mode == "policy" and args.policy == "molmoact2":  # load before touching the arm (minutes)
+        from so101_vla.policies.molmoact2 import MolmoAct2Policy, load_molmoact2_config
+        print("loading MolmoAct2 ...")
+        cmap = {"cam0": "front", "cam1": "second" if "second" in cams else "front"}
+        policy = MolmoAct2Policy(load_molmoact2_config(args.policy_config, camera_map=cmap))
+    elif args.mode == "policy":  # load the model before touching the arm (takes ~1 min)
         from so101_vla.policies.smolvla import SmolVLAConfig, SmolVLAPolicy
         print("loading the policy ...")
         policy = SmolVLAPolicy(SmolVLAConfig(checkpoint=args.checkpoint, revision=None,

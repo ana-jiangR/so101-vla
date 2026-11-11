@@ -13,6 +13,14 @@ left out; SmolVLA allows missing views (``prepare_images`` needs at least one). 
 sim-to-real gap.
 
     uv run python scripts/m10_real_offline_check.py --camera-index 0 --slot camera3 --rotate 180
+
+Zero-shot MolmoAct2-SO100/101 (``--policy molmoact2``, configs/policy/molmoact2_so101.yaml) takes two
+views, in any order; it was trained on real SO-100/101 data. With one camera the same 640x480
+frame fills both slots (as the community molmoact2-so101 ``--scene-only`` mode does); add a second
+camera (e.g. the wrist camera) with ``--camera2-index``. ``--slot`` / ``--checkpoint`` are SmolVLA-only.
+
+    uv run python scripts/m10_real_offline_check.py --policy molmoact2 --camera-index 0
+    uv run python scripts/m10_real_offline_check.py --policy molmoact2 --camera-index 0 --camera2-index 1
 """
 
 from __future__ import annotations
@@ -53,6 +61,10 @@ def main() -> None:
     ap.add_argument("--rotate", type=int, choices=[0, 90, 180, 270], default=0,
                     help="rotate the camera image (e.g. 180 for an upside-down mounted camera)")
     ap.add_argument("--checkpoint", default=DEFAULT_CK)
+    ap.add_argument("--policy", choices=["smolvla", "molmoact2"], default="smolvla")
+    ap.add_argument("--policy-config", default="configs/policy/molmoact2_so101.yaml", help="molmoact2 only")
+    ap.add_argument("--camera2-index", type=int, default=None,
+                    help="molmoact2 only: second camera (e.g. wrist); default: reuse the first camera")
     ap.add_argument("--instruction", default="Pick up the red cube and place it in the green box.")
     ap.add_argument("--repeats", type=int, default=3)
     args = ap.parse_args()
@@ -61,29 +73,33 @@ def main() -> None:
     from lerobot.cameras.opencv import OpenCVCameraConfig
     from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
 
-    robot = SO101Follower(SO101FollowerConfig(
-        port=args.port, id=args.robot_id,
-        cameras={"wrist": OpenCVCameraConfig(index_or_path=args.camera_index, width=640, height=480, fps=30,
-                                               rotation=Cv2Rotation({270: -90}.get(args.rotate, args.rotate)))}))
+    cameras = {"wrist": OpenCVCameraConfig(index_or_path=args.camera_index, width=640, height=480, fps=30,
+                                           rotation=Cv2Rotation({270: -90}.get(args.rotate, args.rotate)))}
+    if args.policy == "molmoact2" and args.camera2_index is not None:
+        cameras["cam2"] = OpenCVCameraConfig(index_or_path=args.camera2_index, width=640, height=480, fps=30)
+    robot = SO101Follower(SO101FollowerConfig(port=args.port, id=args.robot_id, cameras=cameras))
     if not robot.calibration:
         raise SystemExit(f"no calibration for id {args.robot_id!r}; run lerobot-calibrate first")
-    # Read-only: bus + camera only. No configure(), no torque change, no send_action().
+    # Read-only: bus + cameras only. No configure(), no torque change, no send_action().
     robot.bus.connect()
-    cam = robot.cameras["wrist"]
-    cam.connect()
+    for cam in robot.cameras.values():
+        cam.connect()
     try:
         for _ in range(10):  # let auto-exposure settle
-            frame = cam.read()
+            for cam in robot.cameras.values():
+                cam.read()
             time.sleep(0.03)
         state = robot.bus.sync_read("Present_Position")
-        frame = cam.read()
+        frames = {name: np.asarray(cam.read()) for name, cam in robot.cameras.items()}
         torque = robot.bus.sync_read("Torque_Enable", normalize=False)
     finally:
-        cam.disconnect()
+        for cam in robot.cameras.values():
+            cam.disconnect()
         robot.bus.disconnect(disable_torque=False)
 
     state_lr = np.array([state[j] for j in JOINT_NAMES], dtype=np.float64)
-    img = square_resize(np.asarray(frame), 256)
+    frame = frames["wrist"]
+    img = square_resize(frame, 256)
     print(f"real state (deg, gripper 0..100): {dict(zip(JOINT_NAMES, state_lr.round(1).tolist(), strict=True))}")
     print(f"torque enabled per motor (untouched): {torque}")
 
@@ -95,9 +111,18 @@ def main() -> None:
     validator = ActionChunkValidator(units)
     lo, hi = validator.lower_lr, validator.upper_lr
 
-    policy = SmolVLAPolicy(SmolVLAConfig(checkpoint=args.checkpoint, revision=None, camera_map={args.slot: "wrist"}))
-    print(f"camera {args.camera_index} -> policy view {args.slot}")
-    obs = {**dict(zip(LEROBOT_FEATURE_NAMES, state_lr.tolist(), strict=True)), "wrist": img}
+    joints = dict(zip(LEROBOT_FEATURE_NAMES, state_lr.tolist(), strict=True))
+    if args.policy == "molmoact2":
+        from so101_vla.policies.molmoact2 import MolmoAct2Policy, load_molmoact2_config
+
+        cmap = {"cam0": "wrist", "cam1": "cam2" if "cam2" in frames else "wrist"}
+        policy = MolmoAct2Policy(load_molmoact2_config(args.policy_config, camera_map=cmap))
+        print(f"camera {args.camera_index} -> cam0; {'camera ' + str(args.camera2_index) if 'cam2' in frames else 'same camera'} -> cam1")
+        obs = {**joints, **frames}  # 640x480 RGB, as the checkpoint's LeRobot example
+    else:
+        policy = SmolVLAPolicy(SmolVLAConfig(checkpoint=args.checkpoint, revision=None, camera_map={args.slot: "wrist"}))
+        print(f"camera {args.camera_index} -> policy view {args.slot}")
+        obs = {**joints, "wrist": img}
     chunks, times = [], []
     for _ in range(args.repeats):
         policy.reset()
@@ -126,11 +151,14 @@ def main() -> None:
     out.mkdir(parents=True)
     save_png(out / "wrist_raw.png", np.asarray(frame))
     save_png(out / "wrist_256.png", img)
+    if "cam2" in frames:
+        save_png(out / "cam2_raw.png", frames["cam2"])
     np.savez_compressed(out / "sample.npz", state_lerobot=state_lr, chunks=np.array(chunks), image=img,
                         joint_names=np.array(JOINT_NAMES), limits_lerobot=np.array([lo, hi]))
     (out / "sample.json").write_text(json.dumps({
         "port": args.port, "robot_id": args.robot_id, "camera_index": args.camera_index, "policy_slot": args.slot,
-        "checkpoint": args.checkpoint, "instruction": args.instruction, "inference_ms": times,
+        "policy": args.policy, "checkpoint": args.checkpoint if args.policy == "smolvla" else policy.describe(),
+        "instruction": args.instruction, "inference_ms": times,
         "state": dict(zip(JOINT_NAMES, state_lr.tolist(), strict=True)), "torque_enabled": torque,
         "validation": report.to_dict() if report else {"rejected": error},
         "sampling_spread": dict(zip(JOINT_NAMES, spread.round(3).tolist(), strict=True)),

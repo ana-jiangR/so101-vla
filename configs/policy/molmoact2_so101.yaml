@@ -1,0 +1,25 @@
+# Zero-shot MolmoAct2-SO100/101 (Ai2, 5.4B), no fine-tuning.
+# See src/so101_vla/policies/molmoact2.py for the source of each step.
+type: molmoact2
+checkpoint: lerobot/MolmoAct2-SO100_101-LeRobot
+revision: a4ab68081b84bb0659d96f454edbce6abbe8a1cd          # pinned (Hub, 2026-11-11)
+weights_revision: 152569fe57914d97be91055800035f54e250d009  # allenai/MolmoAct2-SO100_101, pinned
+device: cuda
+
+# bf16 weights need ~11 GB. int8 (bitsandbytes LLM.int8) fits an 8 GB GPU;
+# nf4 (4-bit) is the fallback if int8 runs out of memory.
+quantization: int8
+
+# Policy slot -> robot camera. Order does not matter for this checkpoint (trained with
+# randomized camera order); Ai2's real-robot eval used wrist + one third-person camera.
+camera_map:
+  cam0: front
+  cam1: main/wrist_cam
+image_size: [640, 480]   # like the 640x480 USB cameras in LeRobot's example; resized to 378x378
+
+n_action_steps: null     # null = checkpoint's 30 (1 s at 30 Hz)
+num_steps: null          # flow-matching steps; null = checkpoint's 10
+cuda_graph: false        # +2 GB VRAM, untested with bitsandbytes layers
+offload_lm_head: true    # lm_head (0.4B) is unused by continuous inference; keep it on the CPU
+# One-time local bf16 copy of the fp32 weights (~11 GB, gitignored); null = load the Hub repo.
+bf16_cache: outputs/models/MolmoAct2-SO100_101-bf16
